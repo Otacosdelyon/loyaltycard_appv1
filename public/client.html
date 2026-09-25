@@ -15,6 +15,7 @@
             --text-muted: #94a3b8;
             --border: #334155;
             --gold: #f59e0b;
+            --success: #16a34a;
         }
 
         body {
@@ -51,7 +52,6 @@
             color: var(--primary);
             margin: 0 0 4px 0;
             font-size: 1.8rem;
-            letter-spacing: 1px;
         }
 
         p.subtitle {
@@ -68,11 +68,6 @@
             margin-bottom: 16px;
         }
 
-        label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
         input {
             width: 100%;
             padding: 14px;
@@ -87,10 +82,6 @@
             box-sizing: border-box;
         }
 
-        input:focus {
-            border-color: var(--primary);
-        }
-
         button {
             width: 100%;
             padding: 14px;
@@ -102,10 +93,6 @@
             font-size: 1rem;
             cursor: pointer;
             transition: background 0.2s;
-        }
-
-        button:hover {
-            background-color: var(--primary-dark);
         }
 
         .card-display {
@@ -130,23 +117,39 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: var(--text-muted);
             background-color: rgba(15, 23, 42, 0.5);
+            font-weight: bold;
         }
 
-        .stamp-slot.active {
+        /* Half Circle Progress (5-9 points) */
+        .stamp-slot.half {
+            border: 2px solid var(--gold);
+            background: linear-gradient(90deg, var(--gold) 50%, rgba(15, 23, 42, 0.5) 50%);
+            color: #fff;
+        }
+
+        /* Full Orange Circle (10 points) */
+        .stamp-slot.full {
             border: 2px solid var(--gold);
             background-color: var(--gold);
             color: #000;
+            font-size: 1.2rem;
             box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        }
+
+        .points-summary {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--gold);
+            margin: -6px 0 6px 0;
         }
 
         #qrcode {
             background: #fff;
             padding: 12px;
             border-radius: 12px;
-            margin-top: 8px;
         }
 
         .phone-badge {
@@ -155,13 +158,32 @@
             border-radius: 20px;
             font-size: 0.9rem;
             font-weight: 600;
-            letter-spacing: 1px;
+        }
+
+        .redeem-section {
+            width: 100%;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-redeem {
+            background-color: var(--success);
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+
+        .btn-redeem:disabled {
+            background-color: var(--border);
+            color: var(--text-muted);
+            cursor: not-allowed;
         }
 
         .error-msg {
             color: #fca5a5;
             font-size: 0.85rem;
-            margin-top: 8px;
             display: none;
         }
     </style>
@@ -169,13 +191,12 @@
 <body>
 
 <div class="container">
-    <!-- Login / Registration Form -->
+    <!-- Login Screen -->
     <div id="loginCard" class="card">
         <h1>O'TACOS LOYALTY</h1>
         <p class="subtitle">Enter your phone number to view your card</p>
         
         <div class="form-group">
-            <label for="phoneInput">Phone Number (8 Digits starting with 77)</label>
             <input 
                 type="tel" 
                 id="phoneInput" 
@@ -189,26 +210,32 @@
         </div>
 
         <button onclick="loadCard()">Access My Loyalty Card</button>
-        <div id="errorMsg" class="error-msg"></div>
+        <div id="errorMsg" class="error-msg" style="margin-top: 10px;"></div>
     </div>
 
-    <!-- Active Loyalty Card Screen -->
+    <!-- Active Card Screen -->
     <div id="loyaltyCard" class="card card-display">
         <h1>O'TACOS LOYALTY</h1>
         <div class="phone-badge" id="displayPhone">77XXXXXX</div>
+        <div class="points-summary" id="pointsSummary">0 Points</div>
 
         <!-- 10 Stamp Grid -->
-        <div class="stamps-grid" id="stampsGrid">
-            <!-- Dynamically populated -->
-        </div>
-
-        <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-            Show this QR code at checkout to earn stamps!
-        </p>
+        <div class="stamps-grid" id="stampsGrid"></div>
 
         <div id="qrcode"></div>
 
-        <button onclick="switchUser()" style="background-color: transparent; border: 1px solid var(--border); color: var(--text-muted); margin-top: 8px;">
+        <!-- Redemption Options -->
+        <div class="redeem-section">
+            <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">AVAILABLE REWARDS</p>
+            <button class="btn-redeem" id="btnRedeemBreakfast" onclick="redeemReward(50)">
+                🎁 Redeem Free Breakfast (50 Pts)
+            </button>
+            <button class="btn-redeem" id="btnRedeemTacos" onclick="redeemReward(100)">
+                🌮 Redeem Free Tacos (100 Pts)
+            </button>
+        </div>
+
+        <button onclick="switchUser()" style="background-color: transparent; border: 1px solid var(--border); color: var(--text-muted);">
             Switch Account
         </button>
     </div>
@@ -219,11 +246,15 @@
     const loyaltyCard = document.getElementById('loyaltyCard');
     const phoneInput = document.getElementById('phoneInput');
     const displayPhone = document.getElementById('displayPhone');
+    const pointsSummary = document.getElementById('pointsSummary');
     const stampsGrid = document.getElementById('stampsGrid');
     const errorMsg = document.getElementById('errorMsg');
-    let qrcodeObj = null;
+    const btnBreakfast = document.getElementById('btnRedeemBreakfast');
+    const btnTacos = document.getElementById('btnRedeemTacos');
 
-    // Check if user previously logged in on this phone
+    let currentPhone = '';
+    let currentPoints = 0;
+
     const savedPhone = localStorage.getItem('otacos_phone');
     if (savedPhone && /^77\d{6}$/.test(savedPhone)) {
         phoneInput.value = savedPhone;
@@ -232,58 +263,96 @@
 
     async function loadCard() {
         const phone = phoneInput.value.trim();
-        const phoneRegex = /^77\d{6}$/;
-
-        if (!phoneRegex.test(phone)) {
+        if (!/^77\d{6}$/.test(phone)) {
             showError('Phone number must be 8 digits starting with 77');
             return;
         }
 
         try {
-            // Fetch current client points from backend
             const res = await fetch(`/api/client/${phone}`);
-            
             if (res.ok) {
                 const client = await res.json();
                 renderCard(client.phone, client.points);
             } else {
-                // If new phone, default to 0 points
                 renderCard(phone, 0);
             }
-            
             localStorage.setItem('otacos_phone', phone);
         } catch (err) {
-            // Fallback render if offline
             renderCard(phone, 0);
         }
     }
 
     function renderCard(phone, points) {
+        currentPhone = phone;
+        currentPoints = points;
+
         errorMsg.style.display = 'none';
         loginCard.style.display = 'none';
         loyaltyCard.style.display = 'flex';
         displayPhone.innerText = phone;
+        pointsSummary.innerText = `${points} Total Points`;
 
-        // Render 10 stamp slots
+        // Render 10 circles (Each represents 10 points)
         stampsGrid.innerHTML = '';
         for (let i = 1; i <= 10; i++) {
             const slot = document.createElement('div');
-            slot.className = `stamp-slot ${i <= points ? 'active' : ''}`;
-            slot.innerHTML = i <= points ? '🌮' : i;
+            const targetPoints = i * 10;
+
+            if (points >= targetPoints) {
+                // Full 10 Points -> Orange Circle with Taco
+                slot.className = 'stamp-slot full';
+                slot.innerHTML = '🌮';
+            } else if (points >= targetPoints - 5) {
+                // Half Progress (5-9 Points) -> Half Circle
+                slot.className = 'stamp-slot half';
+                slot.innerHTML = i;
+            } else {
+                // Empty Slot
+                slot.className = 'stamp-slot';
+                slot.innerHTML = i;
+            }
             stampsGrid.appendChild(slot);
         }
 
-        // Generate QR code for admin scanner
+        // Enable or disable redeem buttons based on balance
+        btnBreakfast.disabled = points < 50;
+        btnTacos.disabled = points < 100;
+
+        // Generate QR code
         const qrContainer = document.getElementById('qrcode');
         qrContainer.innerHTML = '';
-        qrcodeObj = new QRCode(qrContainer, {
+        new QRCode(qrContainer, {
             text: phone,
-            width: 160,
-            height: 160,
+            width: 150,
+            height: 150,
             colorDark: "#000000",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
         });
+    }
+
+    async function redeemReward(cost) {
+        if (currentPoints < cost) return;
+
+        if (!confirm(`Are you sure you want to redeem ${cost} points?`)) return;
+
+        try {
+            const res = await fetch('/api/redeem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: currentPhone, cost })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert('Reward Redeemed Successfully!');
+                renderCard(currentPhone, data.points);
+            } else {
+                alert(data.error || 'Failed to redeem reward');
+            }
+        } catch (err) {
+            alert('Network error while redeeming reward.');
+        }
     }
 
     function showError(msg) {
