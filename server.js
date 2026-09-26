@@ -23,7 +23,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 function getServiceAccountCredentials() {
   if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
     try {
-      return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+      const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+      if (creds.private_key) {
+        creds.private_key = creds.private_key.replace(/\\n/g, '\n');
+      }
+      return creds;
     } catch (err) {
       console.error('Error parsing GOOGLE_SERVICE_ACCOUNT_KEY:', err);
       return null;
@@ -98,7 +102,7 @@ app.get('/admin', (req, res) => {
 // 1. Get All Clients (For Admin Table from Neon DB)
 app.get('/api/clients', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM clients ORDER BY id DESC');
+    const result = await pool.query('SELECT * FROM clients ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {
     console.error('Database query error:', err);
