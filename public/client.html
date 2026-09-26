@@ -1,268 +1,179 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>O'Tacos Loyalty Card</title>
+  <title>O'Tacos Loyalty</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #121212;
-      color: #ffffff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .card {
-      background: #1e1e1e;
-      border-radius: 20px;
-      padding: 30px;
-      width: 100%;
-      max-width: 380px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      border: 1px solid #333;
-    }
-    .logo {
-      width: 110px;
-      height: 110px;
-      object-fit: contain;
-      margin-bottom: 10px;
-    }
-    .input-group {
-      margin: 20px 0;
-    }
-    input {
-      width: 85%;
-      padding: 14px;
-      border-radius: 10px;
-      border: 1px solid #444;
-      background: #2a2a2a;
-      color: #fff;
-      text-align: center;
-      font-size: 18px;
-      letter-spacing: 2px;
-    }
-    input:focus {
-      outline: none;
-      border-color: #ff6600;
-    }
-    button.btn-primary {
-      width: 92%;
-      padding: 14px;
-      border-radius: 10px;
-      border: none;
-      background: #ff6600;
-      color: #fff;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button.btn-primary:hover {
-      background: #e65c00;
-    }
-    .points-display {
-      font-size: 52px;
-      font-weight: 800;
-      color: #ff6600;
-      margin: 10px 0 5px 0;
-    }
-    .progress-container {
-      background: #333;
-      border-radius: 10px;
-      height: 14px;
-      width: 100%;
-      margin: 15px 0 25px 0;
-      overflow: hidden;
-    }
-    .progress-bar {
-      background: linear-gradient(90deg, #ff6600, #ff9900);
-      height: 100%;
-      width: 0%;
-      transition: width 0.4s ease-in-out;
-    }
-    .reward-banner {
-      background: rgba(255, 102, 0, 0.15);
-      border: 1px solid #ff6600;
-      color: #ff9933;
-      border-radius: 10px;
-      padding: 12px;
-      font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
-    .qr-container {
-      background: #ffffff;
-      padding: 15px;
-      border-radius: 12px;
-      display: inline-block;
-      margin: 15px 0;
-    }
-    .qr-container img {
-      width: 160px;
-      height: 160px;
-      display: block;
-    }
-    #wallet-container {
-      margin-top: 20px;
-    }
-    #wallet-btn img {
-      height: 48px;
-      transition: transform 0.2s;
-    }
-    #wallet-btn img:hover {
-      transform: scale(1.05);
-    }
-    .btn-logout {
-      background: transparent;
-      border: 1px solid #555;
-      color: #aaa;
-      padding: 8px 16px;
-      border-radius: 6px;
-      margin-top: 20px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    .hidden {
-      display: none !important;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #0f172a; color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    
+    .header-title { color: #f97316; font-size: 28px; font-weight: 900; letter-spacing: 1.5px; margin-bottom: 20px; text-transform: uppercase; }
+    
+    .card { background-color: #1e293b; width: 100%; max-width: 380px; border-radius: 20px; padding: 25px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; text-align: center; }
+    
+    .phone-badge { background-color: #334155; color: #cbd5e1; padding: 4px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .client-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; color: #f8fafc; }
+    .points-text { font-size: 18px; font-weight: 800; color: #ea580c; margin-bottom: 20px; }
+    
+    /* 10 Stamp Circles Grid */
+    .stamps-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; margin-bottom: 25px; }
+    .stamp { aspect-ratio: 1; border-radius: 50%; background-color: #f97316; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; box-shadow: 0 0 10px rgba(249, 115, 22, 0.4); opacity: 0.25; transition: all 0.3s ease; }
+    .stamp.active { opacity: 1; transform: scale(1.05); }
+    
+    /* QR Code Container */
+    .qr-container { background-color: #ffffff; padding: 15px; border-radius: 16px; margin-bottom: 8px; }
+    .qr-container img { width: 180px; height: 180px; display: block; }
+    .scan-text { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
+    
+    /* Google Wallet Badge */
+    .wallet-container { margin-bottom: 20px; }
+    .wallet-btn img { height: 46px; transition: transform 0.2s ease; }
+    .wallet-btn img:hover { transform: scale(1.03); }
+    
+    /* Reward Banner */
+    .reward-banner { background-color: #ea580c; color: #ffffff; padding: 14px 15px; border-radius: 12px; font-size: 14px; font-weight: 700; width: 100%; margin-bottom: 15px; display: none; line-height: 1.4; }
+    
+    .logout-btn { background-color: #1e293b; border: 1px solid #334155; color: #cbd5e1; width: 100%; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: background 0.2s ease; }
+    .logout-btn:hover { background-color: #334155; }
+    
+    /* Login Screen */
+    .login-box { background-color: #1e293b; width: 100%; max-width: 380px; border-radius: 20px; padding: 30px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
+    .input-field { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #334155; background-color: #0f172a; color: #ffffff; font-size: 16px; text-align: center; margin: 15px 0; outline: none; }
+    .submit-btn { width: 100%; background-color: #ea580c; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <img src="/otacoslogo.png" alt="O'Tacos Logo" class="logo">
-    <h2>O'Tacos Fidélité</h2>
+  <h1 class="header-title">O'TACOS LOYALTY</h1>
 
-    <!-- LOGIN SECTION -->
-    <div id="login-section">
-      <p style="color: #bbb; font-size: 14px;">Entrez votre numéro à 8 chiffres</p>
-      <div class="input-group">
-        <input type="tel" id="phone-input" maxlength="8" placeholder="ex: 12345678" onkeypress="if(event.key==='Enter') login()">
-      </div>
-      <button class="btn-primary" onclick="login()">Accéder à ma carte</button>
-      <p id="error-msg" style="color: #ff4d4d; font-size: 14px; margin-top: 15px;"></p>
+  <!-- Login Form -->
+  <div id="login-section" class="login-box">
+    <h2 style="margin-bottom: 10px;">Espace Client</h2>
+    <p style="color: #94a3b8; font-size: 14px;">Entrez votre numéro de téléphone (8 chiffres)</p>
+    <input type="tel" id="phone-input" class="input-field" placeholder="Ex: 77111113" maxlength="8">
+    <button onclick="loginClient()" class="submit-btn">Accéder à ma carte</button>
+  </div>
+
+  <!-- Client Loyalty Card -->
+  <div id="card-section" class="card" style="display: none;">
+    <div id="client-phone" class="phone-badge">77111113</div>
+    <div id="client-name" class="client-name">Nom du Client</div>
+    <div id="points-count" class="points-text">0 Total Points</div>
+
+    <!-- 10 Stamps -->
+    <div class="stamps-grid">
+      <div class="stamp" id="stamp-1">1</div>
+      <div class="stamp" id="stamp-2">2</div>
+      <div class="stamp" id="stamp-3">3</div>
+      <div class="stamp" id="stamp-4">4</div>
+      <div class="stamp" id="stamp-5">5</div>
+      <div class="stamp" id="stamp-6">6</div>
+      <div class="stamp" id="stamp-7">7</div>
+      <div class="stamp" id="stamp-8">8</div>
+      <div class="stamp" id="stamp-9">9</div>
+      <div class="stamp" id="stamp-10">10</div>
     </div>
 
-    <!-- CLIENT PASS / CARD SECTION -->
-    <div id="card-section" class="hidden">
-      <h3 id="client-name" style="margin-bottom: 5px; text-transform: capitalize;">---</h3>
-      <p style="color: #aaa; font-size: 12px; margin-top: 0;">Solde de points</p>
-
-      <div class="points-display"><span id="points-count">0</span> <span style="font-size:24px;">/ 100 Pts</span></div>
-
-      <!-- Progress Bar -->
-      <div class="progress-container">
-        <div id="progress-bar" class="progress-bar"></div>
-      </div>
-
-      <!-- Reward Notice (Unlocked at 100 points) -->
-      <div id="reward-banner" class="reward-banner hidden">
-        🎉 Félicitations ! Vous avez atteint 100 points. Offre spéciale débloquée !
-      </div>
-
-      <!-- QR Code for Scanner -->
-      <div class="qr-container">
-        <img id="qr-code" src="" alt="Mon QR Code Client">
-      </div>
-      <p style="color: #888; font-size: 12px;">Présentez ce QR code en caisse</p>
-
-      <!-- Google Wallet Pass Button -->
-      <div id="wallet-container">
-        <a id="wallet-btn" href="#" target="_blank" class="hidden">
-          <img src="https://developers.google.com/static/wallet/images/buttons/en/add-to-google-wallet.svg" alt="Add to Google Wallet">
-        </a>
-      </div>
-
-      <br>
-      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    <!-- QR Code -->
+    <div class="qr-container">
+      <img id="qr-image" src="" alt="QR Code">
     </div>
+    <div class="scan-text">Scannez ce QR Code à la caisse</div>
+
+    <!-- Google Wallet Button Directly Under QR Code -->
+    <div class="wallet-container">
+      <a id="wallet-link" class="wallet-btn" href="#" target="_blank" style="display: none;">
+        <img src="https://pay.google.com/gp/v/static/images/badges/fr_FR_add_to_google_wallet_add-to-wallet-badge.svg" alt="Ajouter à Google Wallet">
+      </a>
+    </div>
+
+    <!-- 100 Pts Banner -->
+    <div id="reward-banner" class="reward-banner">
+      🎉 Bravo !!! Vous avez atteint 100 Pts !<br>Présentez votre QR Code pour réclamer votre surprise !
+    </div>
+
+    <button class="logout-btn" onclick="logout()">Changer de compte</button>
   </div>
 
   <script>
-    let activePhone = null;
-    let pollTimer = null;
-
-    async function login() {
+    async function loginClient() {
       const phone = document.getElementById('phone-input').value.trim();
-      const errorMsg = document.getElementById('error-msg');
-      errorMsg.innerText = '';
-
-      if (phone.length !== 8 || isNaN(phone)) {
-        errorMsg.innerText = 'Veuillez entrer un numéro valide à 8 chiffres.';
+      if (!/^\d{8}$/.test(phone)) {
+        alert('Veuillez entrer un numéro valide à 8 chiffres.');
         return;
       }
 
-      activePhone = phone;
-      await fetchClientData();
+      try {
+        const res = await fetch(`/api/client/${phone}`);
+        if (!res.ok) {
+          alert('Client non trouvé.');
+          return;
+        }
 
-      // Start auto-refresh polling every 5 seconds to catch point updates live
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = setInterval(fetchClientData, 5000);
+        const data = await res.json();
+        renderCard(data);
+        localStorage.setItem('saved_phone', phone);
+      } catch (err) {
+        alert('Erreur lors du chargement des données.');
+      }
     }
 
-    async function fetchClientData() {
-      if (!activePhone) return;
+    function renderCard(data) {
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('card-section').style.display = 'flex';
 
-      try {
-        const response = await fetch(`/api/client/${activePhone}`);
-        if (!response.ok) {
-          throw new Error('Numéro non trouvé.');
-        }
+      document.getElementById('client-phone').innerText = data.phone;
+      document.getElementById('client-name').innerText = data.name;
+      document.getElementById('points-count').innerText = `${data.points} Total Points`;
 
-        const data = await response.json();
+      // QR Code generation
+      document.getElementById('qr-image').src = `https://quickchart.io/qr?text=${data.phone}&size=180`;
 
-        // Update UI Text
-        document.getElementById('client-name').innerText = data.name;
-        document.getElementById('points-count').innerText = data.points;
-
-        // Update Progress Bar (Cap at 100%)
-        const percentage = Math.min(Math.max((data.points / 100) * 100, 0), 100);
-        document.getElementById('progress-bar').style.width = `${percentage}%`;
-
-        // Toggle 100 Pts Reward Banner
-        const rewardBanner = document.getElementById('reward-banner');
-        if (data.points >= 100) {
-          rewardBanner.classList.remove('hidden');
+      // Activate stamp circles (1 stamp per 10 points)
+      const activeStamps = Math.min(10, Math.floor(data.points / 10));
+      for (let i = 1; i <= 10; i++) {
+        const stamp = document.getElementById(`stamp-${i}`);
+        if (i <= activeStamps) {
+          stamp.classList.add('active');
         } else {
-          rewardBanner.classList.add('hidden');
+          stamp.classList.remove('active');
         }
+      }
 
-        // Generate QR Code via QuickChart API
-        const qrImg = document.getElementById('qr-code');
-        qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(data.phone)}&size=200`;
+      // 100 Pts Reward Banner
+      const rewardBanner = document.getElementById('reward-banner');
+      if (data.points >= 100) {
+        rewardBanner.style.display = 'block';
+      } else {
+        rewardBanner.style.display = 'none';
+      }
 
-        // Handle Google Wallet Button Link
-        const walletBtn = document.getElementById('wallet-btn');
-        if (data.walletUrl) {
-          walletBtn.href = data.walletUrl;
-          walletBtn.classList.remove('hidden');
-        } else {
-          walletBtn.classList.add('hidden');
-        }
-
-        // Switch to Card View
-        document.getElementById('login-section').classList.add('hidden');
-        document.getElementById('card-section').classList.remove('hidden');
-
-      } catch (err) {
-        document.getElementById('error-msg').innerText = err.message;
-        if (pollTimer) clearInterval(pollTimer);
+      // Add to Google Wallet Link
+      const walletLink = document.getElementById('wallet-link');
+      if (data.walletUrl) {
+        walletLink.href = data.walletUrl;
+        walletLink.style.display = 'inline-block';
+      } else {
+        walletLink.style.display = 'none';
       }
     }
 
     function logout() {
-      if (pollTimer) clearInterval(pollTimer);
-      activePhone = null;
+      localStorage.removeItem('saved_phone');
+      document.getElementById('card-section').style.display = 'none';
+      document.getElementById('login-section').style.display = 'block';
       document.getElementById('phone-input').value = '';
-      document.getElementById('card-section').classList.add('hidden');
-      document.getElementById('login-section').classList.remove('hidden');
     }
+
+    // Auto-login on load
+    window.onload = () => {
+      const savedPhone = localStorage.getItem('saved_phone');
+      if (savedPhone) {
+        document.getElementById('phone-input').value = savedPhone;
+        loginClient();
+      }
+    };
   </script>
 </body>
 </html>
