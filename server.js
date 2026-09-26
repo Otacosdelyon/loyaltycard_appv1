@@ -174,5 +174,6 @@ app.post('/api/redeem', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la réinitialisation des points' });
     }
 });
-
+app.use(express.static(path.join(__dirname, 'public')));
+const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000023206123';
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
