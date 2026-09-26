@@ -3,9 +3,13 @@ const { Pool } = require('pg');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
-// PostgreSQL Connection Pool configured for Neon
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Neon PostgreSQL Connection Pool
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -13,10 +17,7 @@ const pool = new Pool({
     }
 });
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Initialize Clients Table
+// Database Initialization
 async function initDb() {
     try {
         await pool.query(`
@@ -31,76 +32,86 @@ async function initDb() {
         console.error('Database initialization error:', err);
     }
 }
+
 initDb();
 
-// 1. Fetch All Clients
+// Routes
+
+// Serve Admin View
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Serve Client View
+app.get('/client', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'client.html'));
+});
+
+// GET all clients for directory table
 app.get('/api/clients', async (req, res) => {
     try {
-        const result = await pool.query('SELECT phone, points FROM clients ORDER BY created_at DESC');
-        res.json(result.rows);
+        const { rows } = await pool.query('SELECT phone, points FROM clients ORDER BY created_at DESC');
+        res.json(rows);
     } catch (err) {
-        console.error('Fetch error:', err);
-        res.status(500).json({ error: 'Failed to fetch clients from database' });
+        console.error('Fetch clients error:', err);
+        res.status(500).json({ error: 'Failed to fetch clients' });
     }
 });
 
-// 2. Register/Check Client Existence
-app.post('/api/clients', async (req, res) => {
-    const { phone } = req.body;
-    if (!phone || !/^77\d{6}$/.test(phone)) {
-        return res.status(400).json({ error: 'Invalid phone format (Must be 8 digits starting with 77)' });
-    }
-
+// GET specific client points
+app.get('/api/clients/:phone', async (req, res) => {
+    const { phone } = req.params;
     try {
-        await pool.query(
-            'INSERT INTO clients (phone, points) VALUES ($1, 0) ON CONFLICT (phone) DO NOTHING',
-            [phone]
-        );
-        res.json({ message: 'Client ready' });
-    } catch (err) {
-        console.error('Insert error:', err);
-        res.status(500).json({ error: 'Failed to register client' });
-    }
-});
-
-// 3. Add or Deduct Points
-app.post('/api/points', async (req, res) => {
-    const { phone, delta } = req.body;
-    if (!phone || typeof delta !== 'number') {
-        return res.status(400).json({ error: 'Invalid parameters' });
-    }
-
-    try {
-        // Fetch current points
-        const clientRes = await pool.query('SELECT points FROM clients WHERE phone = $1', [phone]);
-        if (clientRes.rows.length === 0) {
+        const { rows } = await pool.query('SELECT phone, points FROM clients WHERE phone = $1', [phone]);
+        if (rows.length === 0) {
             return res.status(404).json({ error: 'Client not found' });
         }
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('Fetch client error:', err);
+        res.status(500).json({ error: 'Failed to fetch client' });
+    }
+});
 
+// POST register new client or add/deduct points (+10 Tacos, +5 Burger/Panini, +10 Breakfast, or negative values)
+app.post('/api/points', async (req, res) => {
+    const { phone, delta } = req.body;
+    
+    if (!phone || typeof delta !== 'number') {
+        return res.status(400).json({ error: 'Invalid parameters: phone and numeric delta are required' });
+    }
+
+    try {
+        // Check if client exists
+        const clientRes = await pool.query('SELECT points FROM clients WHERE phone = $1', [phone]);
+        
+        if (clientRes.rows.length === 0) {
+            // New client registration with initial points (Capped 0 to 100)
+            const initialPoints = Math.min(100, Math.max(0, delta));
+            const insertRes = await pool.query(
+                'INSERT INTO clients (phone, points) VALUES ($1, $2) RETURNING phone, points',
+                [phone, initialPoints]
+            );
+            return res.json(insertRes.rows[0]);
+        }
+
+        // Existing client update (Capped minimum 0, maximum 100)
         const currentPoints = clientRes.rows[0].points;
-        const updatedPoints = Math.max(0, currentPoints + delta); // Prevent points from falling below 0
+        const updatedPoints = Math.min(100, Math.max(0, currentPoints + delta));
 
         const updateRes = await pool.query(
-            'UPDATE clients SET points = $1 WHERE phone = $2 RETURNING points',
+            'UPDATE clients SET points = $1 WHERE phone = $2 RETURNING phone, points',
             [updatedPoints, phone]
         );
 
-        res.json({ phone, points: updateRes.rows[0].points });
+        res.json(updateRes.rows[0]);
     } catch (err) {
         console.error('Point update error:', err);
         res.status(500).json({ error: 'Failed to update points' });
     }
 });
 
-// HTML Page Routes
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-app.get('/client', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'client.html'));
-});
-
+// Start Server
 app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

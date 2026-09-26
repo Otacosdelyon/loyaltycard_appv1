@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>O'Tacos - Admin Loyalty</title>
-    <!-- HTML5 QR Code Scanner Library -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root {
@@ -32,7 +31,7 @@
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         .header h1 {
@@ -56,15 +55,31 @@
             margin-top: 0;
             color: var(--primary-orange);
             font-size: 1.3rem;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 10px;
         }
 
-        /* QR Scanner Container */
+        .rules-banner {
+            display: flex;
+            gap: 15px;
+            justify-content: space-around;
+            background-color: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary-orange);
+            font-size: 0.95rem;
+            flex-wrap: wrap;
+        }
+
+        .rules-banner span {
+            font-weight: bold;
+        }
+
         #qr-reader {
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
             margin: 0 auto 20px auto;
             border: 2px dashed var(--primary-orange);
             border-radius: 8px;
@@ -99,10 +114,10 @@
             background-color: var(--primary-orange);
             color: #ffffff;
             border: none;
-            padding: 12px 20px;
+            padding: 12px 16px;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
@@ -139,7 +154,7 @@
             padding: 12px;
             color: var(--primary-orange);
             border-bottom: 2px solid var(--border-color);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
         }
 
@@ -173,8 +188,8 @@
         }
 
         .btn-sm {
-            padding: 6px 12px;
-            font-size: 0.85rem;
+            padding: 6px 10px;
+            font-size: 0.8rem;
         }
     </style>
 </head>
@@ -185,22 +200,30 @@
         <h1>O'Tacos - Administration Fidélité</h1>
     </div>
 
-    <!-- Scanner & Quick Points Section -->
+    <!-- Rules Summary -->
+    <div class="rules-banner">
+        <div>🌮 <span>Tacos:</span> +10 Pts</div>
+        <div>🍔 <span>Burger / Panini / Sandwich:</span> +5 Pts</div>
+        <div>☕ <span>Breakfast (temporaire):</span> +10 Pts</div>
+    </div>
+
+    <!-- QR Scanner & Point Controls -->
     <div class="card">
         <h2>Scanner QR Code & Ajouter Points</h2>
         
-        <!-- QR Code Video Region -->
         <div id="qr-reader"></div>
 
         <div class="form-row">
             <input type="text" id="phone-input" placeholder="Numéro de téléphone" required>
-            <button class="btn" onclick="modifyPoints(10)">+10 Points</button>
-            <button class="btn btn-minus" onclick="modifyPoints(-10)">-10 Points</button>
+            <button class="btn" onclick="modifyPoints(10)">+10 Pts (Tacos)</button>
+            <button class="btn" onclick="modifyPoints(5)">+5 Pts (Panini/Burger)</button>
+            <button class="btn" onclick="modifyPoints(10)">+10 Pts (Breakfast)</button>
+            <button class="btn btn-minus" onclick="modifyPoints(-5)">-5 Pts</button>
         </div>
         <div id="status-message" class="status-msg"></div>
     </div>
 
-    <!-- Directory Section -->
+    <!-- Client Directory -->
     <div class="card">
         <h2>Liste des Clients</h2>
         <table>
@@ -222,8 +245,7 @@
 <script>
     const API_BASE = '/api';
 
-    // Initialize QR Code Scanner
-    function onScanSuccess(decodedText, decodedResult) {
+    function onScanSuccess(decodedText) {
         document.getElementById('phone-input').value = decodedText;
         setStatus(`QR Code scanné: ${decodedText}`, '#ff6600');
     }
@@ -233,7 +255,6 @@
     );
     html5QrcodeScanner.render(onScanSuccess);
 
-    // Fetch and display all clients
     async function loadClients() {
         try {
             const response = await fetch(`${API_BASE}/clients`);
@@ -248,7 +269,7 @@
                 const isMax = client.points >= 100;
                 
                 const statusHtml = isMax 
-                    ? '<span class="reward-unlocked">Bravo ! On débloque votre surprise aujourd\'hui ?</span>' 
+                    ? '<span class="reward-unlocked">Bravo !!! Vous avez gagné une surprise! Faites votre choix !</span>' 
                     : '<span style="color: var(--text-muted);">En cours</span>';
 
                 row.innerHTML = `
@@ -257,8 +278,9 @@
                     <td>${statusHtml}</td>
                     <td>
                         <div class="action-btns">
-                            <button class="btn btn-sm" onclick="setDirectPhone('${client.phone}', 10)">+10</button>
-                            <button class="btn btn-minus btn-sm" onclick="setDirectPhone('${client.phone}', -10)">-10</button>
+                            <button class="btn btn-sm" onclick="setDirectPhone('${client.phone}', 10)">+10 (Tacos)</button>
+                            <button class="btn btn-sm" onclick="setDirectPhone('${client.phone}', 5)">+5 (Burger)</button>
+                            <button class="btn btn-minus btn-sm" onclick="setDirectPhone('${client.phone}', -5)">-5</button>
                         </div>
                     </td>
                 `;
