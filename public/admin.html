@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>O'Tacos - Admin Loyalty</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --bg-color: #121212;
@@ -29,17 +30,12 @@
             margin: 0 auto;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
         .header h1 {
             color: var(--primary-orange);
             font-size: 2.2rem;
-            margin: 0 0 5px 0;
+            text-align: center;
+            margin-bottom: 25px;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .card {
@@ -58,33 +54,6 @@
             margin-bottom: 15px;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 10px;
-        }
-
-        .rules-banner {
-            display: flex;
-            gap: 15px;
-            justify-content: space-around;
-            background-color: #2a2a2a;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid var(--primary-orange);
-            font-size: 0.95rem;
-            flex-wrap: wrap;
-        }
-
-        .rules-banner span {
-            font-weight: bold;
-        }
-
-        #qr-reader {
-            width: 100%;
-            max-width: 380px;
-            margin: 0 auto 20px auto;
-            border: 2px dashed var(--primary-orange);
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
         }
 
         .form-row {
@@ -132,15 +101,29 @@
             border: 1px solid var(--border-color);
         }
 
-        .btn-minus:hover {
-            background-color: #444444;
+        #qr-reader {
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto 20px auto;
+            border: 2px dashed var(--primary-orange);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
         }
 
-        .status-msg {
+        .qr-output-card {
             text-align: center;
-            font-weight: bold;
-            min-height: 24px;
-            margin-top: 10px;
+            display: none;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
         }
 
         table {
@@ -163,12 +146,7 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        tr:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-
         .points-badge {
-            display: inline-block;
             background-color: rgba(255, 102, 0, 0.15);
             color: var(--primary-orange);
             padding: 4px 10px;
@@ -177,19 +155,11 @@
             border: 1px solid rgba(255, 102, 0, 0.3);
         }
 
-        .reward-unlocked {
-            color: #ff6600;
+        .status-msg {
+            text-align: center;
             font-weight: bold;
-        }
-
-        .action-btns {
-            display: flex;
-            gap: 6px;
-        }
-
-        .btn-sm {
-            padding: 6px 10px;
-            font-size: 0.8rem;
+            min-height: 24px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -200,44 +170,52 @@
         <h1>O'Tacos - Administration Fidélité</h1>
     </div>
 
-    <!-- Rules Summary -->
-    <div class="rules-banner">
-        <div>🌮 <span>Tacos:</span> +10 Pts</div>
-        <div>🍔 <span>Burger / Panini / Sandwich:</span> +5 Pts</div>
-        <div>☕ <span>Breakfast (temporaire):</span> +10 Pts</div>
+    <!-- 1. Create New Account (First Time Logging in) -->
+    <div class="card">
+        <h2>Créer un Nouveau Compte Client (1ère Visite)</h2>
+        <div class="form-row">
+            <input type="text" id="new-phone" placeholder="Numéro (ex: 77111111)" required>
+            <input type="text" id="new-name" placeholder="Nom complet (ex: Ahmed Ali Umar)" required>
+            <button class="btn" onclick="registerClient()">Enregistrer Client</button>
+        </div>
+        
+        <!-- Generated QR Code Display -->
+        <div id="qr-output" class="qr-output-card">
+            <h3 style="color: var(--primary-orange); margin:0;" id="qr-client-name"></h3>
+            <p style="margin: 5px 0; color: var(--text-muted);" id="qr-client-phone"></p>
+            <div id="qrcode"></div>
+            <p style="font-size: 0.85rem; color: #aaa;">Le client peut scanner ou enregistrer ce QR code pour se connecter dans son portal.</p>
+        </div>
     </div>
 
-    <!-- QR Scanner & Point Controls -->
+    <!-- 2. Scan & Manage Points -->
     <div class="card">
         <h2>Scanner QR Code & Ajouter Points</h2>
-        
         <div id="qr-reader"></div>
 
         <div class="form-row">
-            <input type="text" id="phone-input" placeholder="Numéro de téléphone" required>
+            <input type="text" id="phone-input" placeholder="Numéro du client" required>
             <button class="btn" onclick="modifyPoints(10)">+10 Pts (Tacos)</button>
-            <button class="btn" onclick="modifyPoints(5)">+5 Pts (Panini/Burger)</button>
+            <button class="btn" onclick="modifyPoints(5)">+5 Pts (Burger)</button>
             <button class="btn" onclick="modifyPoints(10)">+10 Pts (Breakfast)</button>
             <button class="btn btn-minus" onclick="modifyPoints(-5)">-5 Pts</button>
         </div>
         <div id="status-message" class="status-msg"></div>
     </div>
 
-    <!-- Client Directory -->
+    <!-- 3. Directory Table -->
     <div class="card">
         <h2>Liste des Clients</h2>
         <table>
             <thead>
                 <tr>
                     <th>Téléphone</th>
+                    <th>Nom Complet</th>
                     <th>Points</th>
-                    <th>Statut</th>
-                    <th>Actions Rapides</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="clients-table-body">
-                <!-- Dynamic Content -->
-            </tbody>
+            <tbody id="clients-table-body"></tbody>
         </table>
     </div>
 </div>
@@ -245,61 +223,79 @@
 <script>
     const API_BASE = '/api';
 
+    // Scanner Initialization
     function onScanSuccess(decodedText) {
         document.getElementById('phone-input').value = decodedText;
         setStatus(`QR Code scanné: ${decodedText}`, '#ff6600');
     }
-
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-        "qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } }
-    );
+    let html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } });
     html5QrcodeScanner.render(onScanSuccess);
+
+    // Register First Time Client & Generate QR Code
+    async function registerClient() {
+        const phone = document.getElementById('new-phone').value.trim();
+        const name = document.getElementById('new-name').value.trim();
+
+        if (!phone || !name) {
+            alert('Veuillez renseigner le numéro et les 3 noms.');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/clients`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, name })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            // Display generated QR code
+            document.getElementById('qr-client-name').innerText = data.name;
+            document.getElementById('qr-client-phone').innerText = `Tél: ${data.phone}`;
+            
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, { text: data.phone, width: 160, height: 160 });
+            document.getElementById('qr-output').style.display = 'block';
+
+            document.getElementById('new-phone').value = '';
+            document.getElementById('new-name').value = '';
+            loadClients();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
 
     async function loadClients() {
         try {
             const response = await fetch(`${API_BASE}/clients`);
-            if (!response.ok) throw new Error('Erreur lors du chargement');
-            
             const clients = await response.json();
             const tableBody = document.getElementById('clients-table-body');
             tableBody.innerHTML = '';
 
             clients.forEach(client => {
                 const row = document.createElement('tr');
-                const isMax = client.points >= 100;
-                
-                const statusHtml = isMax 
-                    ? '<span class="reward-unlocked">Bravo !!! Vous avez gagné une surprise! Faites votre choix !</span>' 
-                    : '<span style="color: var(--text-muted);">En cours</span>';
-
                 row.innerHTML = `
                     <td><strong>${client.phone}</strong></td>
+                    <td>${client.name || 'N/A'}</td>
                     <td><span class="points-badge">${client.points} Points</span></td>
-                    <td>${statusHtml}</td>
                     <td>
-                        <div class="action-btns">
-                            <button class="btn btn-sm" onclick="setDirectPhone('${client.phone}', 10)">+10 (Tacos)</button>
-                            <button class="btn btn-sm" onclick="setDirectPhone('${client.phone}', 5)">+5 (Burger)</button>
-                            <button class="btn btn-minus btn-sm" onclick="setDirectPhone('${client.phone}', -5)">-5</button>
-                        </div>
+                        <button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', 10)">+10</button>
+                        <button class="btn btn-minus" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', -5)">-5</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
             });
         } catch (err) {
-            console.error('Erreur:', err);
-            setStatus('Erreur de connexion au serveur.', '#f44336');
+            console.error(err);
         }
     }
 
     async function modifyPoints(delta, targetPhone = null) {
-        const phoneInput = document.getElementById('phone-input');
-        const phone = targetPhone || phoneInput.value.trim();
-
-        if (!phone) {
-            setStatus('Veuillez entrer ou scanner un numéro de téléphone.', '#f44336');
-            return;
-        }
+        const phone = targetPhone || document.getElementById('phone-input').value.trim();
+        if (!phone) return setStatus('Veuillez entrer un numéro.', '#f44336');
 
         try {
             const response = await fetch(`${API_BASE}/points`, {
@@ -307,15 +303,11 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone, delta })
             });
-
             const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Échec de la mise à jour');
-            }
-
-            setStatus(`Points mis à jour: ${data.phone} a maintenant ${data.points} Points`, '#ff6600');
-            if (!targetPhone) phoneInput.value = '';
+            setStatus(`Points mis à jour pour ${data.name}: ${data.points} Points`, '#ff6600');
+            if (!targetPhone) document.getElementById('phone-input').value = '';
             loadClients();
         } catch (err) {
             setStatus(err.message, '#f44336');
@@ -327,10 +319,10 @@
         modifyPoints(delta, phone);
     }
 
-    function setStatus(message, color) {
-        const statusEl = document.getElementById('status-message');
-        statusEl.innerText = message;
-        statusEl.style.color = color;
+    function setStatus(msg, color) {
+        const el = document.getElementById('status-message');
+        el.innerText = msg;
+        el.style.color = color;
     }
 
     loadClients();
