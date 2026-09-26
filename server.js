@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000023206123';
 const CLASS_ID = `${ISSUER_ID}.otacos_loyalty_card`;
 
-// Neon PostgreSQL Connection
+// Neon PostgreSQL Database Connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -19,13 +19,13 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Load Service Account Credentials
+// Load Google Service Account Credentials
 function getServiceAccountCredentials() {
   if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
     try {
       return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
     } catch (err) {
-      console.error('Error parsing GOOGLE_SERVICE_ACCOUNT_KEY env variable:', err);
+      console.error('Error parsing GOOGLE_SERVICE_ACCOUNT_KEY:', err);
       return null;
     }
   }
@@ -37,7 +37,7 @@ function getServiceAccountCredentials() {
   }
 }
 
-// Generate Signed JWT URL for Google Wallet
+// Generate Google Wallet JWT Save Link
 function generateGoogleWalletUrl(client) {
   const credentials = getServiceAccountCredentials();
   if (!credentials) return null;
@@ -67,9 +67,7 @@ function generateGoogleWalletUrl(client) {
           },
           loyaltyPoints: {
             label: 'Points',
-            balance: {
-              string: client.points.toString()
-            }
+            balance: { string: client.points.toString() }
           }
         }
       ]
@@ -85,7 +83,7 @@ function generateGoogleWalletUrl(client) {
   }
 }
 
-// ================= CLEAN URL ROUTES (Without .html) =================
+// ================= CLEAN UI ROUTES =================
 
 app.get('/client', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'client.html'));
@@ -95,9 +93,9 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// ================= POSTGRESQL API ROUTES =================
+// ================= DATABASE API ROUTES =================
 
-// 1. Get All Clients (For Admin Dashboard from Neon)
+// 1. Get All Clients (For Admin Table from Neon DB)
 app.get('/api/clients', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM clients ORDER BY id DESC');
@@ -108,12 +106,12 @@ app.get('/api/clients', async (req, res) => {
   }
 });
 
-// 2. Get Single Client Details & Wallet Link (For Client App from Neon)
+// 2. Get Single Client (For Client Portal from Neon DB)
 app.get('/api/client/:phone', async (req, res) => {
   const { phone } = req.params;
 
   if (!/^\d{8}$/.test(phone)) {
-    return res.status(400).json({ error: 'Phone number must be exactly 8 digits.' });
+    return res.status(400).json({ error: 'Phone number must be strictly 8 digits.' });
   }
 
   try {
@@ -131,7 +129,7 @@ app.get('/api/client/:phone', async (req, res) => {
   }
 });
 
-// 3. Register / Create New Client in Neon (8-digit phone & 3-word name validation)
+// 3. Register New Client in Neon DB
 app.post('/api/clients', async (req, res) => {
   const { phone, name } = req.body;
 
@@ -147,7 +145,7 @@ app.post('/api/clients', async (req, res) => {
   try {
     const checkUser = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone.trim()]);
     if (checkUser.rows.length > 0) {
-      return res.status(400).json({ error: 'Client already exists.' });
+      return res.status(400).json({ error: 'A client with this phone number already exists.' });
     }
 
     const insertResult = await pool.query(
@@ -164,7 +162,7 @@ app.post('/api/clients', async (req, res) => {
   }
 });
 
-// 4. Adjust Client Points in Neon (0-100 Range Limit)
+// 4. Update Points in Neon DB (Bounded 0-100)
 app.post('/api/points', async (req, res) => {
   const { phone, delta } = req.body;
 
@@ -194,7 +192,6 @@ app.post('/api/points', async (req, res) => {
   }
 });
 
-// Start Server
 app.listen(PORT, () => {
   console.log(`O'Tacos Loyalty Server running on port ${PORT}`);
 });

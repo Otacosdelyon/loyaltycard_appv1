@@ -1,328 +1,268 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>O'Tacos - Carte de Fidélité Client</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        :root {
-            --bg-color: #1a2232;
-            --card-bg: #212b3d;
-            --primary-orange: #ff6600;
-            --primary-orange-hover: #e65c00;
-            --text-color: #ffffff;
-            --text-muted: #8e9bb0;
-            --border-color: #2c384e;
-            --circle-empty-bg: #18202d;
-            --circle-empty-border: #3b4961;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 420px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .header h1 {
-            color: var(--primary-orange);
-            font-size: 2rem;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 800;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 25px 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        }
-
-        .badge-phone {
-            background-color: #2d384d;
-            color: #d1d9e6;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.95rem;
-            display: inline-block;
-            margin-bottom: 8px;
-        }
-
-        .client-name {
-            font-size: 1.4rem;
-            font-weight: bold;
-            color: #ffffff;
-            margin-bottom: 4px;
-            text-transform: capitalize;
-        }
-
-        .points-summary {
-            color: var(--primary-orange);
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        /* 10 Stamp Grid Layout */
-        .stamp-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin: 20px 0 25px 0;
-            justify-items: center;
-        }
-
-        .stamp-circle {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        /* Empty Circle (0 Pts) */
-        .stamp-circle.empty {
-            background-color: var(--circle-empty-bg);
-            border: 2px dashed var(--circle-empty-border);
-            color: var(--text-muted);
-        }
-
-        /* Half Circle (5 Pts) */
-        .stamp-circle.half {
-            background: linear-gradient(90deg, var(--primary-orange) 50%, var(--circle-empty-bg) 50%);
-            border: 2px solid var(--primary-orange);
-            color: #ffffff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-        }
-
-        /* Full Circle (10 Pts) */
-        .stamp-circle.full {
-            background-color: var(--primary-orange);
-            border: 2px solid var(--primary-orange);
-            color: #ffffff;
-            box-shadow: 0 0 10px rgba(255, 102, 0, 0.4);
-        }
-
-        #client-qrcode {
-            display: flex;
-            justify-content: center;
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 12px;
-            width: fit-content;
-            margin: 0 auto 15px auto;
-        }
-
-        .form-group {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-
-        input[type="tel"] {
-            background-color: #18202d;
-            border: 1px solid var(--border-color);
-            color: #fff;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 1rem;
-            width: 65%;
-            outline: none;
-            text-align: center;
-        }
-
-        input[type="tel"]:focus {
-            border-color: var(--primary-orange);
-        }
-
-        button {
-            background-color: var(--primary-orange);
-            color: #ffffff;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background-color: var(--primary-orange-hover);
-        }
-
-        .reward-banner {
-            display: none;
-            background-color: var(--primary-orange);
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 1rem;
-            padding: 14px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-
-        .error-msg {
-            color: #f44336;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .btn-switch {
-            background-color: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            width: 100%;
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        .btn-switch:hover {
-            background-color: #18202d;
-            color: #fff;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'Tacos Loyalty Card</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card {
+      background: #1e1e1e;
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      border: 1px solid #333;
+    }
+    .logo {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+    .input-group {
+      margin: 20px 0;
+    }
+    input {
+      width: 85%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid #444;
+      background: #2a2a2a;
+      color: #fff;
+      text-align: center;
+      font-size: 18px;
+      letter-spacing: 2px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #ff6600;
+    }
+    button.btn-primary {
+      width: 92%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: #ff6600;
+      color: #fff;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button.btn-primary:hover {
+      background: #e65c00;
+    }
+    .points-display {
+      font-size: 52px;
+      font-weight: 800;
+      color: #ff6600;
+      margin: 10px 0 5px 0;
+    }
+    .progress-container {
+      background: #333;
+      border-radius: 10px;
+      height: 14px;
+      width: 100%;
+      margin: 15px 0 25px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, #ff6600, #ff9900);
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease-in-out;
+    }
+    .reward-banner {
+      background: rgba(255, 102, 0, 0.15);
+      border: 1px solid #ff6600;
+      color: #ff9933;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .qr-container {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 12px;
+      display: inline-block;
+      margin: 15px 0;
+    }
+    .qr-container img {
+      width: 160px;
+      height: 160px;
+      display: block;
+    }
+    #wallet-container {
+      margin-top: 20px;
+    }
+    #wallet-btn img {
+      height: 48px;
+      transition: transform 0.2s;
+    }
+    #wallet-btn img:hover {
+      transform: scale(1.05);
+    }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #555;
+      color: #aaa;
+      padding: 8px 16px;
+      border-radius: 6px;
+      margin-top: 20px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>O'Tacos Loyalty</h1>
+  <div class="card">
+    <img src="/otacoslogo.png" alt="O'Tacos Logo" class="logo">
+    <h2>O'Tacos Fidélité</h2>
+
+    <!-- LOGIN SECTION -->
+    <div id="login-section">
+      <p style="color: #bbb; font-size: 14px;">Entrez votre numéro à 8 chiffres</p>
+      <div class="input-group">
+        <input type="tel" id="phone-input" maxlength="8" placeholder="ex: 12345678" onkeypress="if(event.key==='Enter') login()">
+      </div>
+      <button class="btn-primary" onclick="login()">Accéder à ma carte</button>
+      <p id="error-msg" style="color: #ff4d4d; font-size: 14px; margin-top: 15px;"></p>
     </div>
 
-    <!-- Login Form -->
-    <div class="card" id="login-card">
-        <h2 style="margin-top: 0; font-size: 1.2rem; color: var(--primary-orange);">Se Connecter</h2>
-        <div class="form-group">
-            <input type="tel" id="client-phone" placeholder="Numéro (8 chiffres)" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)">
-            <button onclick="fetchClientProfile()">Accéder</button>
-        </div>
-        <div id="error-message" class="error-msg"></div>
+    <!-- CLIENT PASS / CARD SECTION -->
+    <div id="card-section" class="hidden">
+      <h3 id="client-name" style="margin-bottom: 5px; text-transform: capitalize;">---</h3>
+      <p style="color: #aaa; font-size: 12px; margin-top: 0;">Solde de points</p>
+
+      <div class="points-display"><span id="points-count">0</span> <span style="font-size:24px;">/ 100 Pts</span></div>
+
+      <!-- Progress Bar -->
+      <div class="progress-container">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+
+      <!-- Reward Notice (Unlocked at 100 points) -->
+      <div id="reward-banner" class="reward-banner hidden">
+        🎉 Félicitations ! Vous avez atteint 100 points. Offre spéciale débloquée !
+      </div>
+
+      <!-- QR Code for Scanner -->
+      <div class="qr-container">
+        <img id="qr-code" src="" alt="Mon QR Code Client">
+      </div>
+      <p style="color: #888; font-size: 12px;">Présentez ce QR code en caisse</p>
+
+      <!-- Google Wallet Pass Button -->
+      <div id="wallet-container">
+        <a id="wallet-btn" href="#" target="_blank" class="hidden">
+          <img src="https://developers.google.com/static/wallet/images/buttons/en/add-to-google-wallet.svg" alt="Add to Google Wallet">
+        </a>
+      </div>
+
+      <br>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
     </div>
+  </div>
 
-    <!-- Customer Profile & Visual Stamp Card -->
-    <div class="card" id="profile-card" style="display: none;">
-        <div id="display-phone" class="badge-phone"></div>
-        <div id="display-name" class="client-name"></div>
-        <div id="points-summary" class="points-summary">0 Total Points</div>
+  <script>
+    let activePhone = null;
+    let pollTimer = null;
 
-        <!-- 10 Circles Stamp Grid -->
-        <div class="stamp-grid" id="stamp-grid">
-            <!-- Dynamically populated 1 to 10 circles -->
-        </div>
+    async function login() {
+      const phone = document.getElementById('phone-input').value.trim();
+      const errorMsg = document.getElementById('error-msg');
+      errorMsg.innerText = '';
 
-        <!-- Client QR Code -->
-        <div id="client-qrcode"></div>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Scannez ce QR Code à la caisse</p>
+      if (phone.length !== 8 || isNaN(phone)) {
+        errorMsg.innerText = 'Veuillez entrer un numéro valide à 8 chiffres.';
+        return;
+      }
 
-        <!-- Dynamic Reward Alert Banner -->
-        <div id="reward-message" class="reward-banner">
-            🎉 Bravo !!! Vous avez atteint 100 Pts ! Présentez votre QR Code pour réclamer votre surprise !
-        </div>
+      activePhone = phone;
+      await fetchClientData();
 
-        <button class="btn-switch" onclick="switchAccount()">Changer de compte</button>
-    </div>
-</div>
-
-<script>
-    async function fetchClientProfile() {
-        const phone = document.getElementById('client-phone').value.trim();
-        const errorEl = document.getElementById('error-message');
-        const loginCard = document.getElementById('login-card');
-        const profileCard = document.getElementById('profile-card');
-        const nameEl = document.getElementById('display-name');
-        const phoneEl = document.getElementById('display-phone');
-        const pointsSummary = document.getElementById('points-summary');
-        const stampGrid = document.getElementById('stamp-grid');
-        const rewardEl = document.getElementById('reward-message');
-        const qrContainer = document.getElementById('client-qrcode');
-
-        errorEl.innerText = '';
-
-        if (phone.length !== 8 || !/^\d{8}$/.test(phone)) {
-            errorEl.innerText = 'Veuillez entrer un numéro valide de 8 chiffres.';
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/clients/${phone}`);
-            if (!response.ok) {
-                if (response.status === 404) throw new Error('Aucun compte trouvé pour ce numéro.');
-                throw new Error('Erreur de connexion au serveur.');
-            }
-
-            const data = await response.json();
-
-            nameEl.innerText = data.name || 'Client';
-            phoneEl.innerText = data.phone;
-
-            const totalPoints = Math.min(100, Math.max(0, data.points));
-            pointsSummary.innerText = `${totalPoints} Total Points`;
-
-            // Render 10 Stamp Circles
-            stampGrid.innerHTML = '';
-            for (let i = 1; i <= 10; i++) {
-                const circle = document.createElement('div');
-                circle.classList.add('stamp-circle');
-                circle.innerText = i;
-
-                const circleValue = i * 10;
-
-                if (totalPoints >= circleValue) {
-                    circle.classList.add('full'); // 10 Pts completed
-                } else if (totalPoints >= circleValue - 5) {
-                    circle.classList.add('half'); // 5 Pts half circle
-                } else {
-                    circle.classList.add('empty'); // 0 Pts empty
-                }
-
-                stampGrid.appendChild(circle);
-            }
-
-            // Generate QR Code
-            qrContainer.innerHTML = '';
-            new QRCode(qrContainer, { text: data.phone, width: 160, height: 160 });
-
-            loginCard.style.display = 'none';
-            profileCard.style.display = 'block';
-
-            if (totalPoints >= 100) {
-                rewardEl.style.display = 'block';
-            } else {
-                rewardEl.style.display = 'none';
-            }
-        } catch (err) {
-            profileCard.style.display = 'none';
-            loginCard.style.display = 'block';
-            errorEl.innerText = err.message;
-        }
+      // Start auto-refresh polling every 5 seconds to catch point updates live
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(fetchClientData, 5000);
     }
 
-    function switchAccount() {
-        document.getElementById('profile-card').style.display = 'none';
-        document.getElementById('login-card').style.display = 'block';
-        document.getElementById('client-phone').value = '';
-    }
-</script>
+    async function fetchClientData() {
+      if (!activePhone) return;
 
+      try {
+        const response = await fetch(`/api/client/${activePhone}`);
+        if (!response.ok) {
+          throw new Error('Numéro non trouvé.');
+        }
+
+        const data = await response.json();
+
+        // Update UI Text
+        document.getElementById('client-name').innerText = data.name;
+        document.getElementById('points-count').innerText = data.points;
+
+        // Update Progress Bar (Cap at 100%)
+        const percentage = Math.min(Math.max((data.points / 100) * 100, 0), 100);
+        document.getElementById('progress-bar').style.width = `${percentage}%`;
+
+        // Toggle 100 Pts Reward Banner
+        const rewardBanner = document.getElementById('reward-banner');
+        if (data.points >= 100) {
+          rewardBanner.classList.remove('hidden');
+        } else {
+          rewardBanner.classList.add('hidden');
+        }
+
+        // Generate QR Code via QuickChart API
+        const qrImg = document.getElementById('qr-code');
+        qrImg.src = `https://quickchart.io/qr?text=${encodeURIComponent(data.phone)}&size=200`;
+
+        // Handle Google Wallet Button Link
+        const walletBtn = document.getElementById('wallet-btn');
+        if (data.walletUrl) {
+          walletBtn.href = data.walletUrl;
+          walletBtn.classList.remove('hidden');
+        } else {
+          walletBtn.classList.add('hidden');
+        }
+
+        // Switch to Card View
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('card-section').classList.remove('hidden');
+
+      } catch (err) {
+        document.getElementById('error-msg').innerText = err.message;
+        if (pollTimer) clearInterval(pollTimer);
+      }
+    }
+
+    function logout() {
+      if (pollTimer) clearInterval(pollTimer);
+      activePhone = null;
+      document.getElementById('phone-input').value = '';
+      document.getElementById('card-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+    }
+  </script>
 </body>
 </html>

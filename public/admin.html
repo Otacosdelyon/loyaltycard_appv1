@@ -1,425 +1,342 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>O'Tacos - Admin Loyalty</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --primary-orange: #ff6600;
-            --primary-orange-hover: #e65c00;
-            --text-color: #ffffff;
-            --text-muted: #aaaaaa;
-            --border-color: #2a2a2a;
-            --danger-red: #d9534f;
-            --danger-red-hover: #c9302c;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'Tacos Admin - Fidélité</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      margin: 0;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-        }
+    .card-block {
+      background: #1e1e1e;
+      border-radius: 16px;
+      padding: 25px 30px;
+      width: 100%;
+      max-width: 850px;
+      border: 1px solid #2d2d2d;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      box-sizing: border-box;
+    }
 
-        .container {
-            max-width: 950px;
-            margin: 0 auto;
-        }
+    h3 {
+      color: #ff6600;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
 
-        .header h1 {
-            color: var(--primary-orange);
-            font-size: 2.2rem;
-            text-align: center;
-            margin-bottom: 25px;
-            text-transform: uppercase;
-        }
+    .input-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        }
+    input {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
 
-        .card h2 {
-            margin-top: 0;
-            color: var(--primary-orange);
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-        }
+    input:focus {
+      border-color: #ff6600;
+    }
 
-        .form-row {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
+    .btn-orange {
+      background: #ff6600;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
 
-        input[type="text"], input[type="tel"] {
-            background-color: #2a2a2a;
-            border: 1px solid var(--border-color);
-            color: #fff;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 1rem;
-            width: 240px;
-            outline: none;
-        }
+    .btn-orange:hover {
+      background: #e65c00;
+    }
 
-        input[type="text"]:focus, input[type="tel"]:focus {
-            border-color: var(--primary-orange);
-        }
+    .btn-dark {
+      background: #333;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+    }
 
-        .btn {
-            background-color: var(--primary-orange);
-            color: #ffffff;
-            border: none;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
+    .btn-dark:hover {
+      background: #444;
+    }
 
-        .btn:hover {
-            background-color: var(--primary-orange-hover);
-        }
+    .btn-red {
+      background: #e54d4d;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+    }
 
-        .btn-minus {
-            background-color: #333333;
-            color: #ffffff;
-            border: 1px solid var(--border-color);
-        }
+    .btn-red:hover {
+      background: #cc3b3b;
+    }
 
-        .btn-minus:hover {
-            background-color: #444444;
-        }
+    .info-text {
+      color: #aaa;
+      font-size: 13px;
+      margin-top: 10px;
+    }
 
-        .btn-redeem {
-            background-color: var(--danger-red);
-            color: #ffffff;
-            border: none;
-        }
+    .scanner-box {
+      border: 2px dashed #444;
+      border-radius: 12px;
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      background: #181818;
+    }
 
-        .btn-redeem:hover {
-            background-color: var(--danger-red-hover);
-        }
+    .scanner-btn {
+      background: #ffffff;
+      color: #000;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
 
-        #qr-reader {
-            width: 100%;
-            max-width: 380px;
-            margin: 0 auto 20px auto;
-            border: 2px dashed var(--primary-orange);
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
 
-        .qr-output-card {
-            text-align: center;
-            display: none;
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
+    th {
+      text-align: left;
+      color: #ff6600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #333;
+    }
 
-        #qrcode {
-            display: flex;
-            justify-content: center;
-            margin: 15px 0;
-        }
+    td {
+      padding: 14px 0;
+      border-bottom: 1px solid #262626;
+      font-size: 15px;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
+    .action-btns {
+      display: flex;
+      gap: 8px;
+    }
 
-        th {
-            text-align: left;
-            padding: 12px;
-            color: var(--primary-orange);
-            border-bottom: 2px solid var(--border-color);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .points-badge {
-            background-color: rgba(255, 102, 0, 0.15);
-            color: var(--primary-orange);
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-weight: bold;
-            border: 1px solid rgba(255, 102, 0, 0.3);
-        }
-
-        .status-msg {
-            text-align: center;
-            font-weight: bold;
-            min-height: 24px;
-            margin-top: 10px;
-        }
-
-        .hint {
-            font-size: 0.85rem;
-            color: #aaa;
-            text-align: center;
-            margin-top: -5px;
-            margin-bottom: 10px;
-        }
-
-        .action-btns {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-    </style>
+    .action-btns button {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>O'Tacos - Administration Fidélité</h1>
+  <!-- BLOCK 1: ENREGISTRER UN NOUVEAU CLIENT -->
+  <div class="card-block">
+    <h3>Enregistrer un Nouveau Client (1ère Visite)</h3>
+    <div class="input-row">
+      <input type="tel" id="new-phone" maxlength="8" placeholder="77111112" style="flex: 1;">
+      <input type="text" id="new-name" placeholder="Nom complet (ex: Ahmed Ali Uma)" style="flex: 2;">
+      <button class="btn-orange" onclick="registerClient()">Enregistrer & Générer QR</button>
+    </div>
+    <div class="info-text">
+      ⚠️ Numéro à 8 chiffres uniquement | Nom à 3 mots minimum.
+    </div>
+    <p id="reg-msg" style="margin-top: 10px; font-size: 14px; font-weight: bold;"></p>
+  </div>
+
+  <!-- BLOCK 2: SCANNER QR CODE & GÉRER LES POINTS -->
+  <div class="card-block">
+    <h3>Scanner QR Code & Gérer les Points</h3>
+    
+    <div class="scanner-box">
+      <button class="scanner-btn">Start Scanning</button>
+      <a href="#" style="color: #4db8ff; font-size: 13px; text-decoration: underline;">Scan an Image File</a>
     </div>
 
-    <!-- 1. Registration Section -->
-    <div class="card">
-        <h2>Enregistrer un Nouveau Client (1ère Visite)</h2>
-        <div class="form-row">
-            <input type="tel" id="new-phone" placeholder="Numéro (8 chiffres)" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
-            <input type="text" id="new-name" placeholder="Nom complet (ex: Ahmed Ali Umar)" required>
-            <button class="btn" onclick="registerClient()">Enregistrer & Générer QR</button>
-        </div>
-        <div class="hint">⚠️ Numéro à 8 chiffres uniquement | Nom à 3 mots minimum.</div>
-        
-        <!-- Generated QR Code Display -->
-        <div id="qr-output" class="qr-output-card">
-            <h3 style="color: var(--primary-orange); margin:0;" id="qr-client-name"></h3>
-            <p style="margin: 5px 0; color: var(--text-muted);" id="qr-client-phone"></p>
-            <div id="qrcode"></div>
-            <p style="font-size: 0.85rem; color: #aaa;">Prenez en photo ou imprimez ce QR code pour le client.</p>
-        </div>
+    <div class="input-row">
+      <input type="tel" id="scan-phone" maxlength="8" placeholder="Numéro du client (8 chiffres)" style="flex: 1;">
+      <button class="btn-orange" onclick="adjustPointsDirect(10)">+10 Pts</button>
+      <button class="btn-orange" onclick="adjustPointsDirect(5)">+5 Pts</button>
+      <button class="btn-dark" onclick="adjustPointsDirect(-5)">-5 Pts</button>
+      <button class="btn-dark" onclick="adjustPointsDirect(-10)">-10 Pts</button>
+      <button class="btn-red" onclick="redeemReward()">Redeem 100 Pts!</button>
     </div>
+    <p id="points-msg" style="margin-top: 10px; font-size: 14px; font-weight: bold;"></p>
+  </div>
 
-    <!-- 2. Point Allocation & Scanner -->
-    <div class="card">
-        <h2>Scanner QR Code & Gérer les Points</h2>
-        <div id="qr-reader"></div>
+  <!-- BLOCK 3: LISTE DES CLIENTS -->
+  <div class="card-block">
+    <h3>Liste des Clients</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Téléphone</th>
+          <th>Nom (3 Mots)</th>
+          <th>Points</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="client-table-body">
+        <tr>
+          <td colspan="4" style="color: #777; text-align: center;">Chargement des données...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-        <div class="form-row">
-            <input type="tel" id="phone-input" placeholder="Numéro du client (8 chiffres)" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
-            <button class="btn" onclick="modifyPoints(10)">+10 Pts</button>
-            <button class="btn" onclick="modifyPoints(5)">+5 Pts</button>
-            <button class="btn btn-minus" onclick="modifyPoints(-5)">-5 Pts</button>
-            <button class="btn btn-minus" onclick="modifyPoints(-10)">-10 Pts</button>
-            <button class="btn btn-redeem" onclick="redeemPoints()">Redeem 100 Pts!</button>
-        </div>
-        <div id="status-message" class="status-msg"></div>
-    </div>
-
-    <!-- 3. Client Directory -->
-    <div class="card">
-        <h2>Liste des Clients</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Téléphone</th>
-                    <th>Nom (3 Mots)</th>
-                    <th>Points</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="clients-table-body"></tbody>
-        </table>
-    </div>
-</div>
-
-<script>
-    const API_BASE = '/api';
-
-    // Scanner Initialization
-    function onScanSuccess(decodedText) {
-        const cleanPhone = decodedText.replace(/[^0-9]/g, '').slice(0, 8);
-        document.getElementById('phone-input').value = cleanPhone;
-        setStatus(`QR Code scanné: ${cleanPhone}`, '#ff6600');
-    }
-    let html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } });
-    html5QrcodeScanner.render(onScanSuccess);
-
-    // Register Client with 8 Digits + 3 Words Validation
-    async function registerClient() {
-        const phone = document.getElementById('new-phone').value.trim();
-        const name = document.getElementById('new-name').value.trim();
-
-        if (phone.length !== 8 || !/^\d{8}$/.test(phone)) {
-            alert('ERREUR: Le numéro de téléphone doit comporter exactement 8 chiffres !');
-            return;
-        }
-
-        const nameParts = name.split(/\s+/);
-        if (nameParts.length < 3) {
-            alert('ERREUR: Le nom doit obligatoirement comporter 3 mots ! Ex: Ahmed Ali Umar');
-            return;
-        }
-
-        try {
-            const res = await fetch(`${API_BASE}/clients`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, name })
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-
-            document.getElementById('qr-client-name').innerText = data.name;
-            document.getElementById('qr-client-phone').innerText = `Tél: ${data.phone}`;
-            
-            const qrContainer = document.getElementById('qrcode');
-            qrContainer.innerHTML = '';
-            new QRCode(qrContainer, { text: data.phone, width: 160, height: 160 });
-            document.getElementById('qr-output').style.display = 'block';
-
-            document.getElementById('new-phone').value = '';
-            document.getElementById('new-name').value = '';
-            loadClients();
-        } catch (err) {
-            alert(err.message);
-        }
-    }
-
+  <script>
+    // 1. Fetch client list from /api/clients
     async function loadClients() {
-        try {
-            const response = await fetch(`${API_BASE}/clients`);
-            const clients = await response.json();
-            const tableBody = document.getElementById('clients-table-body');
-            tableBody.innerHTML = '';
+      try {
+        const res = await fetch('/api/clients');
+        if (!res.ok) throw new Error('Échec du chargement des clients');
+        const clients = await res.json();
 
-            clients.forEach(client => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><strong>${client.phone}</strong></td>
-                    <td>${client.name || 'N/A'}</td>
-                    <td><span class="points-badge">${client.points} Points</span></td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', 10)">+10</button>
-                            <button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', 5)">+5</button>
-                            <button class="btn btn-minus" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', -5)">-5</button>
-                            <button class="btn btn-minus" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', -10)">-10</button>
-                            <button class="btn btn-redeem" style="padding: 4px 8px; font-size: 0.8rem;" onclick="redeemPoints('${client.phone}')">Redeem 100 Pts!</button>
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        } catch (err) {
-            console.error(err);
-        }
-    }
+        const tbody = document.getElementById('client-table-body');
+        tbody.innerHTML = '';
 
-    async function modifyPoints(delta, targetPhone = null) {
-        const phone = targetPhone || document.getElementById('phone-input').value.trim();
-
-        if (phone.length !== 8 || !/^\d{8}$/.test(phone)) {
-            return setStatus('Veuillez entrer un numéro valide de 8 chiffres.', '#f44336');
+        if (!clients || clients.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="color: #777; text-align: center;">Aucun client trouvé dans la base de données.</td></tr>';
+          return;
         }
 
-        try {
-            const response = await fetch(`${API_BASE}/points`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, delta })
-            });
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (data.error === 'Merci de réclamer votre surprise !') {
-                    alert('Merci de réclamer votre surprise !');
-                }
-                throw new Error(data.error);
-            }
-
-            setStatus(`Points mis à jour pour ${data.name}: ${data.points} Points`, '#ff6600');
-            if (!targetPhone) document.getElementById('phone-input').value = '';
-            loadClients();
-        } catch (err) {
-            setStatus(err.message, '#f44336');
-        }
+        clients.forEach(c => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><strong>${c.phone}</strong></td>
+            <td>${c.name}</td>
+            <td style="color: #ff6600; font-weight: bold;">${c.points} Pts</td>
+            <td>
+              <div class="action-btns">
+                <button class="btn-orange" onclick="adjustByPhone('${c.phone}', 10)">+10</button>
+                <button class="btn-orange" onclick="adjustByPhone('${c.phone}', 5)">+5</button>
+                <button class="btn-dark" onclick="adjustByPhone('${c.phone}', -5)">-5</button>
+                <button class="btn-dark" onclick="adjustByPhone('${c.phone}', -10)">-10</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        console.error('Failed to load clients:', err);
+      }
     }
 
-    async function redeemPoints(targetPhone = null) {
-        const phone = targetPhone || document.getElementById('phone-input').value.trim();
+    // 2. Register Client
+    async function registerClient() {
+      const phone = document.getElementById('new-phone').value.trim();
+      const name = document.getElementById('new-name').value.trim();
+      const msg = document.getElementById('reg-msg');
+      msg.innerText = '';
 
-        if (phone.length !== 8 || !/^\d{8}$/.test(phone)) {
-            return setStatus('Veuillez entrer ou scanner un numéro valide de 8 chiffres.', '#f44336');
-        }
+      try {
+        const res = await fetch('/api/clients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, name })
+        });
 
-        try {
-            const clientCheck = await fetch(`${API_BASE}/clients/${phone}`);
-            const clientData = await clientCheck.json();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erreur lors de la création');
 
-            if (!clientCheck.ok) throw new Error(clientData.error);
-
-            if (clientData.points < 100) {
-                const needed = 100 - clientData.points;
-                const errMsg = `Désolé vous n'avez pas assez de points pour votre surprise ! Encore ${needed} Pts à cotiser`;
-                setStatus(errMsg, '#f44336');
-                alert(errMsg);
-                return;
-            }
-
-            if (!confirm(`Confirmer la réinitialisation (NILL) des points à 0 pour ${clientData.name} (${phone}) ?`)) {
-                return;
-            }
-
-            const response = await fetch(`${API_BASE}/redeem`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone })
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error);
-
-            setStatus(`Récompense validée ! Points réinitialisés à 0 pour ${data.client.name}`, '#4CAF50');
-            if (!targetPhone) document.getElementById('phone-input').value = '';
-            loadClients();
-        } catch (err) {
-            setStatus(err.message, '#f44336');
-        }
+        msg.style.color = '#4caf50';
+        msg.innerText = 'Client enregistré avec succès !';
+        document.getElementById('new-phone').value = '';
+        document.getElementById('new-name').value = '';
+        
+        loadClients();
+      } catch (err) {
+        msg.style.color = '#ff4d4d';
+        msg.innerText = err.message;
+      }
     }
 
-    function setDirectPhone(phone, delta) {
-        document.getElementById('phone-input').value = phone;
-        modifyPoints(delta, phone);
+    // 3. Adjust points directly from top input field
+    async function adjustPointsDirect(delta) {
+      const phone = document.getElementById('scan-phone').value.trim();
+      if (!phone) {
+        alert('Veuillez entrer un numéro de téléphone.');
+        return;
+      }
+      await adjustByPhone(phone, delta);
     }
 
-    function setStatus(msg, color) {
-        const el = document.getElementById('status-message');
-        el.innerText = msg;
-        el.style.color = color;
+    // Redeem 100 Points
+    async function redeemReward() {
+      const phone = document.getElementById('scan-phone').value.trim();
+      if (!phone) {
+        alert('Veuillez entrer un numéro de téléphone.');
+        return;
+      }
+      await adjustByPhone(phone, -100);
     }
 
-    loadClients();
-</script>
+    // 4. API call to update points
+    async function adjustByPhone(phone, delta) {
+      const msg = document.getElementById('points-msg');
+      msg.innerText = '';
 
+      try {
+        const res = await fetch('/api/points', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, delta })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Échec de mise à jour');
+
+        msg.style.color = '#4caf50';
+        msg.innerText = `Points mis à jour ! Nouveau solde: ${data.points} Pts`;
+        loadClients();
+      } catch (err) {
+        msg.style.color = '#ff4d4d';
+        msg.innerText = err.message;
+      }
+    }
+
+    // Initial load and poll every 5 seconds
+    window.onload = () => {
+      loadClients();
+      setInterval(loadClients, 5000);
+    };
+  </script>
 </body>
 </html>
