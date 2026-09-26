@@ -15,6 +15,7 @@
             --text-muted: #94a3b8;
             --border: #334155;
             --success: #16a34a;
+            --danger: #dc2626;
         }
 
         body {
@@ -59,12 +60,16 @@
             margin-top: 0;
             margin-bottom: 12px;
             color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         #reader {
             width: 100%;
             border-radius: 8px;
             overflow: hidden;
+            border: none !important;
         }
 
         .form-group {
@@ -91,26 +96,31 @@
             box-sizing: border-box;
         }
 
-        .btn-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
             gap: 8px;
             margin-top: 8px;
         }
 
         button {
-            padding: 12px 6px;
+            flex: 1;
+            padding: 12px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
             font-size: 0.9rem;
             cursor: pointer;
             transition: background 0.2s;
-            background-color: var(--primary);
-            color: #fff;
         }
 
-        button:hover { background-color: var(--primary-dark); }
+        .btn-primary { background-color: var(--primary); color: #fff; }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+
+        .btn-add { background-color: var(--primary); color: #fff; }
 
         .status-msg {
             padding: 12px;
@@ -137,24 +147,25 @@
             font-size: 0.9rem;
         }
 
-        th { color: var(--text-muted); }
+        th {
+            color: var(--text-muted);
+        }
     </style>
 </head>
 <body>
-
 <div class="container">
     <div class="header">
         <h1>O'Tacos Admin Portal</h1>
-        <p style="margin:0; color: var(--text-muted); font-size: 0.85rem;">Scan QR or Enter Client Phone Number</p>
+        <p style="margin:0; color: var(--text-muted); font-size: 0.85rem;">Scan QR or Enter Phone (77XXXXXX)</p>
     </div>
 
-    <!-- Scanner -->
+    <!-- Scanner Section -->
     <div class="card">
         <h2>📷 QR Scanner</h2>
         <div id="reader"></div>
     </div>
 
-    <!-- Add Points Section -->
+    <!-- Manual Input / Add Loyalty Points -->
     <div class="card">
         <h2>🌮 Add Loyalty Points</h2>
         
@@ -172,16 +183,16 @@
             >
         </div>
 
-        <div class="btn-grid">
-            <button onclick="updatePoints(10)">+10 Points<br><small>(Tacos)</small></button>
-            <button onclick="updatePoints(5)">+5 Points<br><small>(Burger/Panini)</small></button>
-            <button onclick="updatePoints(2)">+2 Points<br><small>(Breakfast)</small></button>
+        <div class="btn-group">
+            <button class="btn-add" onclick="ensureAndAddPoints(10)">+10 Points<br><small>(Tacos)</small></button>
+            <button class="btn-add" onclick="ensureAndAddPoints(5)">+5 Points<br><small>(Burger/Panini)</small></button>
+            <button class="btn-add" onclick="ensureAndAddPoints(2)">+2 Points<br><small>(Breakfast)</small></button>
         </div>
 
         <div id="statusMsg" class="status-msg"></div>
     </div>
 
-    <!-- Registered Clients Table -->
+    <!-- Client Directory -->
     <div class="card">
         <h2>📋 Registered Clients</h2>
         <input type="text" id="searchInput" placeholder="Search phone..." onkeyup="filterTable()" style="margin-bottom: 10px;">
@@ -192,7 +203,9 @@
                     <th>Total Points</th>
                 </tr>
             </thead>
-            <tbody id="clientTableBody"></tbody>
+            <tbody id="clientTableBody">
+                <!-- Data loaded dynamically -->
+            </tbody>
         </table>
     </div>
 </div>
@@ -201,6 +214,7 @@
     const phoneInput = document.getElementById('phone');
     const statusMsg = document.getElementById('statusMsg');
 
+    // Load registered clients list
     async function loadClients() {
         try {
             const res = await fetch('/api/clients');
@@ -219,16 +233,25 @@
         }
     }
 
-    async function updatePoints(delta) {
+    // Auto-Creates Client IF Missing, THEN Adds Points
+    async function ensureAndAddPoints(delta) {
         const phone = phoneInput.value.trim();
         const phoneRegex = /^77\d{6}$/;
 
         if (!phoneRegex.test(phone)) {
-            showStatus('Phone must be 8 digits starting with 77 (e.g. 77123456)', false);
+            showStatus('Phone number must be 8 digits starting with 77', false);
             return;
         }
 
         try {
+            // Step 1: Ensure customer exists (Create if missing)
+            await fetch('/api/clients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+            });
+
+            // Step 2: Add Points
             const res = await fetch('/api/points', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -237,13 +260,13 @@
 
             const data = await res.json();
             if (res.ok) {
-                showStatus(`Success! ${phone} now has ${data.points} points.`, true);
+                showStatus(`Success! ${phone} updated. New Total: ${data.points} pts.`, true);
                 loadClients();
             } else {
                 showStatus(data.error || 'Failed to update points', false);
             }
         } catch (err) {
-            showStatus('Network error. Check connection.', false);
+            showStatus('Network error. Please check server connection.', false);
         }
     }
 
@@ -261,11 +284,21 @@
         });
     }
 
+    // QR Code Scanner - Forced Rear Camera Config
+    const scannerConfig = { 
+        fps: 10, 
+        qrbox: 250,
+        videoConstraints: { facingMode: { exact: "environment" } }
+    };
+
     const scanner = new Html5QrcodeScanner("reader", { 
-    fps: 10, 
-    qrbox: 250,
-    facingMode: "environment" // Forces the rear/back camera
-});
+        fps: 10, 
+        qrbox: 250,
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+        }
+    });
+
     scanner.render((decodedText) => {
         const cleanText = decodedText.trim().replace(/\D/g, '');
         if (cleanText.length >= 8) {
@@ -277,6 +310,7 @@
         }
     });
 
+    // Initial load
     loadClients();
 </script>
 </body>
