@@ -66,7 +66,7 @@
             margin-bottom: 15px;
         }
 
-        input[type="text"] {
+        input[type="text"], input[type="tel"] {
             background-color: #2a2a2a;
             border: 1px solid var(--border-color);
             color: #fff;
@@ -77,7 +77,7 @@
             outline: none;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus, input[type="tel"]:focus {
             border-color: var(--primary-orange);
         }
 
@@ -200,11 +200,11 @@
     <div class="card">
         <h2>Enregistrer un Nouveau Client (1ère Visite)</h2>
         <div class="form-row">
-            <input type="text" id="new-phone" placeholder="Numéro (ex: 77111111)" required>
+            <input type="tel" id="new-phone" placeholder="Numéro (8 chiffres)" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
             <input type="text" id="new-name" placeholder="Nom complet (ex: Ahmed Ali Umar)" required>
             <button class="btn" onclick="registerClient()">Enregistrer & Générer QR</button>
         </div>
-        <div class="hint">⚠️ Le nom doit obligatoirement comporter 3 mots (ex: Prénom Second-prénom Nom).</div>
+        <div class="hint">⚠️ Numéro à 8 chiffres uniquement | Nom à 3 mots minimum.</div>
         
         <!-- Generated QR Code Display -->
         <div id="qr-output" class="qr-output-card">
@@ -221,7 +221,7 @@
         <div id="qr-reader"></div>
 
         <div class="form-row">
-            <input type="text" id="phone-input" placeholder="Numéro du client" required>
+            <input type="tel" id="phone-input" placeholder="Numéro du client (8 chiffres)" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
             <button class="btn" onclick="modifyPoints(10)">+10 Pts (Tacos)</button>
             <button class="btn" onclick="modifyPoints(5)">+5 Pts (Burger)</button>
             <button class="btn" onclick="modifyPoints(10)">+10 Pts (Breakfast)</button>
@@ -253,19 +253,20 @@
 
     // Scanner Initialization
     function onScanSuccess(decodedText) {
-        document.getElementById('phone-input').value = decodedText;
-        setStatus(`QR Code scanné: ${decodedText}`, '#ff6600');
+        const cleanPhone = decodedText.replace(/[^0-9]/g, '').slice(0, 8);
+        document.getElementById('phone-input').value = cleanPhone;
+        setStatus(`QR Code scanné: ${cleanPhone}`, '#ff6600');
     }
     let html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } });
     html5QrcodeScanner.render(onScanSuccess);
 
-    // Register Client with 3-Word Name Check
+    // Register Client with 8 Digits + 3 Words Validation
     async function registerClient() {
         const phone = document.getElementById('new-phone').value.trim();
         const name = document.getElementById('new-name').value.trim();
 
-        if (!phone || !name) {
-            alert('Veuillez renseigner le numéro et le nom complet.');
+        if (phone.length !== 8 || !/^\d{8}$/.test(phone)) {
+            alert('ERREUR: Le numéro de téléphone doit comporter exactement 8 chiffres !');
             return;
         }
 
@@ -331,7 +332,10 @@
 
     async function modifyPoints(delta, targetPhone = null) {
         const phone = targetPhone || document.getElementById('phone-input').value.trim();
-        if (!phone) return setStatus('Veuillez entrer un numéro.', '#f44336');
+
+        if (phone.length !== 8 || !/^\d{8}$/.test(phone)) {
+            return setStatus('Veuillez entrer un numéro valide de 8 chiffres.', '#f44336');
+        }
 
         try {
             const response = await fetch(`${API_BASE}/points`, {
@@ -350,16 +354,32 @@
         }
     }
 
-    // Redeem 100 Pts: NILLs points back to 0
     async function redeemPoints(targetPhone = null) {
         const phone = targetPhone || document.getElementById('phone-input').value.trim();
-        if (!phone) return setStatus('Veuillez entrer ou scanner un numéro.', '#f44336');
 
-        if (!confirm(`Confirmer la réinitialisation (NILL) des points à 0 pour le numéro ${phone} ?`)) {
-            return;
+        if (phone.length !== 8 || !/^\d{8}$/.test(phone)) {
+            return setStatus('Veuillez entrer ou scanner un numéro valide de 8 chiffres.', '#f44336');
         }
 
+        // Pre-check client points client-side before prompting confirmation
         try {
+            const clientCheck = await fetch(`${API_BASE}/clients/${phone}`);
+            const clientData = await clientCheck.json();
+
+            if (!clientCheck.ok) throw new Error(clientData.error);
+
+            if (clientData.points < 100) {
+                const needed = 100 - clientData.points;
+                const errMsg = `Désolé vous n'avez pas assez de points pour votre surprise ! Encore ${needed} Pts à cotiser`;
+                setStatus(errMsg, '#f44336');
+                alert(errMsg);
+                return;
+            }
+
+            if (!confirm(`Confirmer la réinitialisation (NILL) des points à 0 pour ${clientData.name} (${phone}) ?`)) {
+                return;
+            }
+
             const response = await fetch(`${API_BASE}/redeem`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

@@ -66,7 +66,7 @@
             margin-bottom: 15px;
         }
 
-        input[type="text"] {
+        input[type="tel"] {
             background-color: #2a2a2a;
             border: 1px solid var(--border-color);
             color: #fff;
@@ -131,7 +131,7 @@
     <div class="card">
         <h2>Se Connecter</h2>
         <div class="form-group">
-            <input type="text" id="client-phone" placeholder="Votre numéro de téléphone">
+            <input type="tel" id="client-phone" placeholder="Numéro (8 chiffres)" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)">
             <button onclick="fetchClientProfile()">Accéder</button>
         </div>
         <div id="error-message" class="error-msg"></div>
@@ -166,8 +166,8 @@
 
         errorEl.innerText = '';
 
-        if (!phone) {
-            errorEl.innerText = 'Veuillez entrer votre numéro de téléphone.';
+        if (phone.length !== 8 || !/^\d{8}$/.test(phone)) {
+            errorEl.innerText = 'Veuillez entrer un numéro valide de 8 chiffres.';
             return;
         }
 

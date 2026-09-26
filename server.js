@@ -34,6 +34,11 @@ async function initDb() {
 
 initDb();
 
+// Helper to validate 8-digit phone number
+function isValidPhone(phone) {
+    return /^\d{8}$/.test(phone);
+}
+
 // Serve Pages
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/client', (req, res) => res.sendFile(path.join(__dirname, 'public', 'client.html')));
@@ -51,6 +56,10 @@ app.get('/api/clients', async (req, res) => {
 // GET specific client
 app.get('/api/clients/:phone', async (req, res) => {
     const { phone } = req.params;
+    if (!isValidPhone(phone)) {
+        return res.status(400).json({ error: 'Le numéro doit comporter exactement 8 chiffres.' });
+    }
+
     try {
         const { rows } = await pool.query('SELECT phone, name, points FROM clients WHERE phone = $1', [phone]);
         if (rows.length === 0) {
@@ -62,7 +71,7 @@ app.get('/api/clients/:phone', async (req, res) => {
     }
 });
 
-// POST Register new client with mandatory 3-part name check
+// POST Register new client (Strict 8 digits phone + 3 words name)
 app.post('/api/clients', async (req, res) => {
     const { phone, name } = req.body;
 
@@ -70,8 +79,11 @@ app.post('/api/clients', async (req, res) => {
         return res.status(400).json({ error: 'Le numéro et le nom sont requis.' });
     }
 
-    const nameParts = name.trim().split(/\s+/);
+    if (!isValidPhone(phone)) {
+        return res.status(400).json({ error: 'Le numéro de téléphone doit comporter exactement 8 chiffres (ex: 77123456).' });
+    }
 
+    const nameParts = name.trim().split(/\s+/);
     if (nameParts.length < 3) {
         return res.status(400).json({ 
             error: 'Le nom doit obligatoirement comporter 3 mots (ex: Ahmed Ali Umar).' 
@@ -97,8 +109,9 @@ app.post('/api/clients', async (req, res) => {
 // POST Modify points
 app.post('/api/points', async (req, res) => {
     const { phone, delta } = req.body;
-    if (!phone || typeof delta !== 'number') {
-        return res.status(400).json({ error: 'Numéro et valeur requis' });
+
+    if (!isValidPhone(phone) || typeof delta !== 'number') {
+        return res.status(400).json({ error: 'Numéro valide de 8 chiffres requis.' });
     }
 
     try {
@@ -121,17 +134,27 @@ app.post('/api/points', async (req, res) => {
     }
 });
 
-// POST Redeem Points (Resets points to 0)
+// POST Redeem Points (Requires 100 pts minimum)
 app.post('/api/redeem', async (req, res) => {
     const { phone } = req.body;
-    if (!phone) {
-        return res.status(400).json({ error: 'Numéro de téléphone requis' });
+
+    if (!isValidPhone(phone)) {
+        return res.status(400).json({ error: 'Numéro valide de 8 chiffres requis.' });
     }
 
     try {
         const clientRes = await pool.query('SELECT points, name FROM clients WHERE phone = $1', [phone]);
         if (clientRes.rows.length === 0) {
             return res.status(404).json({ error: 'Client non trouvé' });
+        }
+
+        const currentPoints = clientRes.rows[0].points;
+
+        if (currentPoints < 100) {
+            const needed = 100 - currentPoints;
+            return res.status(400).json({ 
+                error: `Désolé vous n'avez pas assez de points pour votre surprise ! Encore ${needed} Pts à cotiser` 
+            });
         }
 
         const updateRes = await pool.query(
