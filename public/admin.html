@@ -1,337 +1,243 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - O'Tacos Loyalty</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <title>O'Tacos - Admin Loyalty</title>
     <style>
         :root {
-            --primary: #d97706;
-            --primary-dark: #b45309;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --gold: #f59e0b;
+            --primary-color: #D32F2F;
+            --secondary-color: #333333;
+            --background-color: #f4f4f4;
+            --card-background: #ffffff;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
             margin: 0;
-            padding: 16px;
-            display: flex;
-            justify-content: center;
+            padding: 20px;
+            color: var(--secondary-color);
         }
 
         .container {
-            width: 100%;
-            max-width: 600px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .header {
-            text-align: center;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 12px;
-        }
-
-        .header h1 {
-            color: var(--primary);
-            margin: 0 0 6px 0;
-            font-size: 1.6rem;
-        }
-
-        .card {
-            background-color: var(--card-bg);
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-background);
+            padding: 25px;
             border-radius: 12px;
-            padding: 16px;
-            border: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .card h2 {
-            font-size: 1.1rem;
-            margin-top: 0;
-            margin-bottom: 12px;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
         }
 
-        #reader {
-            width: 100%;
+        .action-card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
             border-radius: 8px;
-            overflow: hidden;
-            border: none !important;
+            margin-bottom: 25px;
         }
 
         .form-group {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        input {
-            width: 100%;
+        input[type="text"], input[type="number"] {
             padding: 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background-color: #0f172a;
-            color: #fff;
-            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
             outline: none;
-            box-sizing: border-box;
-        }
-
-        input:focus {
-            border-color: var(--primary);
-        }
-
-        .btn-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-top: 8px;
+            width: 200px;
         }
 
         button {
-            padding: 12px 6px;
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.85rem;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
         }
 
-        .btn-add { background-color: var(--primary); color: #fff; }
-        .btn-add:hover { background-color: var(--primary-dark); }
-
-        .btn-sub { background-color: #475569; color: #fff; }
-        .btn-sub:hover { background-color: #334155; }
-
-        .btn-redeem { background-color: var(--success); color: #fff; }
-        .btn-redeem:hover { background-color: #15803d; }
-
-        .status-msg {
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-            font-weight: 500;
-            text-align: center;
+        button:hover {
+            background-color: #b71c1c;
         }
 
-        .status-success { background-color: #14532d; color: #4ade80; }
-        .status-error { background-color: #7f1d1d; color: #fca5a5; }
+        .btn-secondary {
+            background-color: #757575;
+        }
+
+        .btn-secondary:hover {
+            background-color: #616161;
+        }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 8px;
+            margin-top: 15px;
         }
 
         th, td {
-            padding: 10px;
+            padding: 12px;
             text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
+            border-bottom: 1px solid #ddd;
         }
 
         th {
-            color: var(--text-muted);
+            background-color: #f0f0f0;
+            color: var(--secondary-color);
         }
 
-        .section-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin: 12px 0 6px 0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .status-msg {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+            height: 20px;
+        }
+
+        .max-reward-badge {
+            background-color: #4CAF50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
+
 <div class="container">
-    <div class="header">
-        <h1>O'Tacos Admin Portal</h1>
-        <p style="margin:0; color: var(--text-muted); font-size: 0.85rem;">Scan QR or Enter Phone (77XXXXXX)</p>
-    </div>
+    <h1>O'Tacos - Administration Fidélité</h1>
 
-    <!-- Scanner Section -->
-    <div class="card">
-        <h2>📷 QR Scanner</h2>
-        <div id="reader"></div>
-    </div>
-
-    <!-- Manual Input / Manage Points -->
-    <div class="card">
-        <h2>🌮 Manage Client Points</h2>
-        
+    <!-- Quick Action Section -->
+    <div class="action-card">
+        <h2>Gestion des Points Client</h2>
         <div class="form-group">
-            <label for="phone">Client Phone Number (77XXXXXX)</label>
-            <input 
-                type="tel" 
-                id="phone" 
-                placeholder="77123456" 
-                pattern="^77\d{6}$" 
-                maxlength="8" 
-                minlength="8" 
-                inputmode="numeric" 
-                required
-            >
+            <input type="text" id="phone-input" placeholder="Numéro de téléphone" required>
+            <button onclick="modifyPoints(10)">+10 Points</button>
+            <button onclick="modifyPoints(-10)" class="btn-secondary">-10 Points</button>
         </div>
-
-        <!-- Add Points -->
-        <div class="section-title">➕ Add Points (1 Circle = 10 Points)</div>
-        <div class="btn-grid">
-            <button class="btn-add" onclick="updatePoints(10)">+10 Points<br><small>(1 Circle / Tacos)</small></button>
-            <button class="btn-add" onclick="updatePoints(5)">+5 Points<br><small>(0.5 Circle / Burger)</small></button>
-            <button class="btn-add" onclick="updatePoints(10)">+10 Points<br><small>(1 Circle / Breakfast)</small></button>
-        </div>
-
-        <!-- Correct Mistakes -->
-        <div class="section-title">✏️ Remove Points (Fix Typo / Error)</div>
-        <div class="btn-grid">
-            <button class="btn-sub" onclick="updatePoints(-1)">-1 Point</button>
-            <button class="btn-sub" onclick="updatePoints(-5)">-5 Points</button>
-            <button class="btn-sub" onclick="updatePoints(-10)">-10 Points</button>
-        </div>
-
-        <!-- Redeem Rewards -->
-        <div class="section-title">🎁 Redeem Reward (Full Card = 100 Points)</div>
-        <div style="display: flex; gap: 8px;">
-            <button class="btn-redeem" style="width: 100%;" onclick="updatePoints(-100)">🎉 Redeem 1 Free Taco (-100 Pts)</button>
-        </div>
-
-        <div id="statusMsg" class="status-msg"></div>
+        <div id="status-message" class="status-msg"></div>
     </div>
 
     <!-- Client Directory -->
-    <div class="card">
-        <h2>📋 Registered Clients</h2>
-        <input type="text" id="searchInput" placeholder="Search phone..." onkeyup="filterTable()" style="margin-bottom: 10px;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Phone</th>
-                    <th>Total Points</th>
-                </tr>
-            </thead>
-            <tbody id="clientTableBody">
-                <!-- Data loaded dynamically -->
-            </tbody>
-        </table>
-    </div>
+    <h2>Liste des Clients</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Téléphone</th>
+                <th>Points</th>
+                <th>Statut / Offre</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="clients-table-body">
+            <!-- Dynamic Client Rows -->
+        </tbody>
+    </table>
 </div>
 
 <script>
-    const phoneInput = document.getElementById('phone');
-    const statusMsg = document.getElementById('statusMsg');
+    const API_BASE = '/api';
 
+    // Fetch and display all clients
     async function loadClients() {
         try {
-            const res = await fetch('/api/clients');
-            if (res.ok) {
-                const clients = await res.json();
-                const tableBody = document.getElementById('clientTableBody');
-                tableBody.innerHTML = clients.map(c => `
-                    <tr>
-                        <td>${c.phone}</td>
-                        <td><strong>${c.points} pts</strong> (${(c.points / 10).toFixed(1)} circles)</td>
-                    </tr>
-                `).join('');
-            }
+            const response = await fetch(`${API_BASE}/clients`);
+            if (!response.ok) throw new Error('Erreur lors du chargement des clients');
+            
+            const clients = await response.json();
+            const tableBody = document.getElementById('clients-table-body');
+            tableBody.innerHTML = '';
+
+            clients.forEach(client => {
+                const row = document.createElement('tr');
+                
+                const isMax = client.points >= 100;
+                const statusBadge = isMax 
+                    ? '<span class="max-reward-badge">Surprise Débloquée !</span>' 
+                    : 'En cours';
+
+                row.innerHTML = `
+                    <td><strong>${client.phone}</strong></td>
+                    <td>${client.points} Points</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button onclick="setDirectPhone('${client.phone}', 10)">+10</button>
+                        <button onclick="setDirectPhone('${client.phone}', -10)" class="btn-secondary">-10</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
         } catch (err) {
-            console.error("Failed to fetch clients", err);
+            console.error('Erreur:', err);
+            setStatus('Erreur de connexion au serveur.', 'red');
         }
     }
 
-    async function updatePoints(delta) {
-        const phone = phoneInput.value.trim();
-        const phoneRegex = /^77\d{6}$/;
+    // Modify points for an account
+    async function modifyPoints(delta, targetPhone = null) {
+        const phoneInput = document.getElementById('phone-input');
+        const phone = targetPhone || phoneInput.value.trim();
 
-        if (!phoneRegex.test(phone)) {
-            showStatus('Phone number must be 8 digits starting with 77', false);
+        if (!phone) {
+            setStatus('Veuillez entrer un numéro de téléphone valid.', 'red');
             return;
         }
 
         try {
-            // Ensure client exists first
-            await fetch('/api/clients', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone })
-            });
-
-            // Update points
-            const res = await fetch('/api/points', {
+            const response = await fetch(`${API_BASE}/points`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone, delta })
             });
 
-            const data = await res.json();
-            if (res.ok) {
-                const actionText = delta > 0 ? `Added ${delta} points` : `Deducted ${Math.abs(delta)} points`;
-                showStatus(`Success! ${actionText}. New Total: ${data.points} pts.`, true);
-                loadClients();
-            } else {
-                showStatus(data.error || 'Failed to update points', false);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Échec de la mise à jour');
             }
+
+            setStatus(`Points mis à jour: ${data.phone} a maintenant ${data.points} Points`, 'green');
+            if (!targetPhone) phoneInput.value = '';
+            loadClients();
         } catch (err) {
-            showStatus('Network error. Check connection.', false);
+            setStatus(err.message, 'red');
         }
     }
 
-    function showStatus(text, isSuccess) {
-        statusMsg.innerText = text;
-        statusMsg.className = `status-msg ${isSuccess ? 'status-success' : 'status-error'}`;
-        statusMsg.style.display = 'block';
+    function setDirectPhone(phone, delta) {
+        document.getElementById('phone-input').value = phone;
+        modifyPoints(delta, phone);
     }
 
-    function filterTable() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        const rows = document.querySelectorAll('#clientTableBody tr');
-        rows.forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
-        });
+    function setStatus(message, color) {
+        const statusEl = document.getElementById('status-message');
+        statusEl.innerText = message;
+        statusEl.style.color = color === 'green' ? '#2e7d32' : '#c62828';
     }
 
-    // QR Scanner
-    const scanner = new Html5QrcodeScanner("reader", { 
-        fps: 10, 
-        qrbox: 250,
-        facingMode: "environment"
-    });
-
-    scanner.render((decodedText) => {
-        const cleanText = decodedText.trim().replace(/\D/g, '');
-        if (cleanText.length >= 8) {
-            const matchedPhone = cleanText.slice(-8);
-            phoneInput.value = matchedPhone;
-            showStatus(`Scanned client: ${matchedPhone}`, true);
-        } else {
-            phoneInput.value = decodedText;
-        }
-    });
-
+    // Load directory on startup
     loadClients();
 </script>
+
 </body>
 </html>
