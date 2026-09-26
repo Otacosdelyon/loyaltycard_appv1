@@ -103,6 +103,10 @@
             border: 1px solid var(--border-color);
         }
 
+        .btn-minus:hover {
+            background-color: #444444;
+        }
+
         .btn-redeem {
             background-color: var(--danger-red);
             color: #ffffff;
@@ -222,10 +226,10 @@
 
         <div class="form-row">
             <input type="tel" id="phone-input" placeholder="Numéro du client (8 chiffres)" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
-            <button class="btn" onclick="modifyPoints(10)">+10 Pts (Tacos)</button>
-            <button class="btn" onclick="modifyPoints(5)">+5 Pts (Burger)</button>
-            <button class="btn" onclick="modifyPoints(10)">+10 Pts (Breakfast)</button>
+            <button class="btn" onclick="modifyPoints(10)">+10 Pts</button>
+            <button class="btn" onclick="modifyPoints(5)">+5 Pts</button>
             <button class="btn btn-minus" onclick="modifyPoints(-5)">-5 Pts</button>
+            <button class="btn btn-minus" onclick="modifyPoints(-10)">-10 Pts</button>
             <button class="btn btn-redeem" onclick="redeemPoints()">Redeem 100 Pts!</button>
         </div>
         <div id="status-message" class="status-msg"></div>
@@ -318,7 +322,9 @@
                     <td>
                         <div class="action-btns">
                             <button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', 10)">+10</button>
+                            <button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', 5)">+5</button>
                             <button class="btn btn-minus" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', -5)">-5</button>
+                            <button class="btn btn-minus" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', -10)">-10</button>
                             <button class="btn btn-redeem" style="padding: 4px 8px; font-size: 0.8rem;" onclick="redeemPoints('${client.phone}')">Redeem 100 Pts!</button>
                         </div>
                     </td>
