@@ -7,12 +7,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
+            --bg-color: #1a2232;
+            --card-bg: #212b3d;
             --primary-orange: #ff6600;
+            --primary-orange-hover: #e65c00;
             --text-color: #ffffff;
-            --text-muted: #aaaaaa;
-            --border-color: #2a2a2a;
+            --text-muted: #8e9bb0;
+            --border-color: #2c384e;
+            --circle-empty-bg: #18202d;
+            --circle-empty-border: #3b4961;
         }
 
         body {
@@ -24,7 +27,7 @@
         }
 
         .container {
-            max-width: 450px;
+            max-width: 420px;
             margin: 0 auto;
             text-align: center;
         }
@@ -34,40 +37,108 @@
             font-size: 2rem;
             margin-bottom: 20px;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 800;
         }
 
         .card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 25px;
+            border-radius: 16px;
+            padding: 25px 20px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .badge-phone {
+            background-color: #2d384d;
+            color: #d1d9e6;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            display: inline-block;
+            margin-bottom: 8px;
         }
 
         .client-name {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #ffffff;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             text-transform: capitalize;
         }
 
-        .client-phone {
+        .points-summary {
+            color: var(--primary-orange);
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        /* 10 Stamp Grid Layout */
+        .stamp-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin: 20px 0 25px 0;
+            justify-items: center;
+        }
+
+        .stamp-circle {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Empty Circle (0 Pts) */
+        .stamp-circle.empty {
+            background-color: var(--circle-empty-bg);
+            border: 2px dashed var(--circle-empty-border);
             color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-bottom: 15px;
+        }
+
+        /* Half Circle (5 Pts) */
+        .stamp-circle.half {
+            background: linear-gradient(90deg, var(--primary-orange) 50%, var(--circle-empty-bg) 50%);
+            border: 2px solid var(--primary-orange);
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Full Circle (10 Pts) */
+        .stamp-circle.full {
+            background-color: var(--primary-orange);
+            border: 2px solid var(--primary-orange);
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(255, 102, 0, 0.4);
+        }
+
+        #client-qrcode {
+            display: flex;
+            justify-content: center;
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 12px;
+            width: fit-content;
+            margin: 0 auto 15px auto;
         }
 
         .form-group {
             display: flex;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         input[type="tel"] {
-            background-color: #2a2a2a;
+            background-color: #18202d;
             border: 1px solid var(--border-color);
             color: #fff;
             padding: 12px 16px;
@@ -76,6 +147,10 @@
             width: 65%;
             outline: none;
             text-align: center;
+        }
+
+        input[type="tel"]:focus {
+            border-color: var(--primary-orange);
         }
 
         button {
@@ -87,19 +162,11 @@
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
 
-        .points-display {
-            font-size: 3rem;
-            font-weight: bold;
-            color: var(--primary-orange);
-            margin: 15px 0;
-        }
-
-        #client-qrcode {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0 10px 0;
+        button:hover {
+            background-color: var(--primary-orange-hover);
         }
 
         .reward-banner {
@@ -107,8 +174,8 @@
             background-color: var(--primary-orange);
             color: #ffffff;
             font-weight: bold;
-            font-size: 1.1rem;
-            padding: 15px;
+            font-size: 1rem;
+            padding: 14px;
             border-radius: 8px;
             margin-top: 15px;
         }
@@ -118,18 +185,33 @@
             font-weight: bold;
             margin-top: 10px;
         }
+
+        .btn-switch {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .btn-switch:hover {
+            background-color: #18202d;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>O'Tacos Fidélité</h1>
+        <h1>O'Tacos Loyalty</h1>
     </div>
 
     <!-- Login Form -->
-    <div class="card">
-        <h2>Se Connecter</h2>
+    <div class="card" id="login-card">
+        <h2 style="margin-top: 0; font-size: 1.2rem; color: var(--primary-orange);">Se Connecter</h2>
         <div class="form-group">
             <input type="tel" id="client-phone" placeholder="Numéro (8 chiffres)" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)">
             <button onclick="fetchClientProfile()">Accéder</button>
@@ -137,19 +219,27 @@
         <div id="error-message" class="error-msg"></div>
     </div>
 
-    <!-- Customer Profile -->
+    <!-- Customer Profile & Visual Stamp Card -->
     <div class="card" id="profile-card" style="display: none;">
-        <div class="client-name" id="display-name"></div>
-        <div class="client-phone" id="display-phone"></div>
+        <div id="display-phone" class="badge-phone"></div>
+        <div id="display-name" class="client-name"></div>
+        <div id="points-summary" class="points-summary">0 Total Points</div>
 
-        <div id="client-qrcode"></div>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Scannez ce QR Code à la caisse</p>
-
-        <div id="points-display" class="points-display">0 Points</div>
-
-        <div id="reward-message" class="reward-banner">
-            Bravo !!! Vous avez gagné une surprise! Faites votre choix !
+        <!-- 10 Circles Stamp Grid -->
+        <div class="stamp-grid" id="stamp-grid">
+            <!-- Dynamically populated 1 to 10 circles -->
         </div>
+
+        <!-- Client QR Code -->
+        <div id="client-qrcode"></div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Scannez ce QR Code à la caisse</p>
+
+        <!-- Dynamic Reward Alert Banner -->
+        <div id="reward-message" class="reward-banner">
+            🎉 Bravo !!! Vous avez atteint 100 Pts ! Présentez votre QR Code pour réclamer votre surprise !
+        </div>
+
+        <button class="btn-switch" onclick="switchAccount()">Changer de compte</button>
     </div>
 </div>
 
@@ -157,10 +247,12 @@
     async function fetchClientProfile() {
         const phone = document.getElementById('client-phone').value.trim();
         const errorEl = document.getElementById('error-message');
+        const loginCard = document.getElementById('login-card');
         const profileCard = document.getElementById('profile-card');
         const nameEl = document.getElementById('display-name');
         const phoneEl = document.getElementById('display-phone');
-        const pointsEl = document.getElementById('points-display');
+        const pointsSummary = document.getElementById('points-summary');
+        const stampGrid = document.getElementById('stamp-grid');
         const rewardEl = document.getElementById('reward-message');
         const qrContainer = document.getElementById('client-qrcode');
 
@@ -181,25 +273,54 @@
             const data = await response.json();
 
             nameEl.innerText = data.name || 'Client';
-            phoneEl.innerText = `Tél: ${data.phone}`;
+            phoneEl.innerText = data.phone;
 
-            const points = Math.min(100, data.points);
-            pointsEl.innerText = `${points} Points`;
+            const totalPoints = Math.min(100, Math.max(0, data.points));
+            pointsSummary.innerText = `${totalPoints} Total Points`;
 
+            // Render 10 Stamp Circles
+            stampGrid.innerHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                const circle = document.createElement('div');
+                circle.classList.add('stamp-circle');
+                circle.innerText = i;
+
+                const circleValue = i * 10;
+
+                if (totalPoints >= circleValue) {
+                    circle.classList.add('full'); // 10 Pts completed
+                } else if (totalPoints >= circleValue - 5) {
+                    circle.classList.add('half'); // 5 Pts half circle
+                } else {
+                    circle.classList.add('empty'); // 0 Pts empty
+                }
+
+                stampGrid.appendChild(circle);
+            }
+
+            // Generate QR Code
             qrContainer.innerHTML = '';
-            new QRCode(qrContainer, { text: data.phone, width: 150, height: 150 });
+            new QRCode(qrContainer, { text: data.phone, width: 160, height: 160 });
 
+            loginCard.style.display = 'none';
             profileCard.style.display = 'block';
 
-            if (points >= 100) {
+            if (totalPoints >= 100) {
                 rewardEl.style.display = 'block';
             } else {
                 rewardEl.style.display = 'none';
             }
         } catch (err) {
             profileCard.style.display = 'none';
+            loginCard.style.display = 'block';
             errorEl.innerText = err.message;
         }
+    }
+
+    function switchAccount() {
+        document.getElementById('profile-card').style.display = 'none';
+        document.getElementById('login-card').style.display = 'block';
+        document.getElementById('client-phone').value = '';
     }
 </script>
 
