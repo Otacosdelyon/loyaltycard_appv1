@@ -10,14 +10,15 @@ const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000023206123';
 const CLASS_ID = `${ISSUER_ID}.otacos_loyalty_card`;
 
 app.use(express.json());
+// Serves static files (client.html, otacoslogo.png, etc.) from the public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// In-Memory Database (Pre-seeded with valid 8-digit phone & 3-word name)
+// In-Memory Database
 let clients = [
   { phone: '12345678', name: 'Samiya Ahmed Loyalty', points: 10 }
 ];
 
-// Load Service Account Credentials from Render Env Variable or local JSON file
+// Load Service Account Credentials
 function getServiceAccountCredentials() {
   if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
     try {
@@ -35,7 +36,7 @@ function getServiceAccountCredentials() {
   }
 }
 
-// Generate Signed JWT URL for Google Wallet "Save Pass"
+// Generate Signed JWT URL for Google Wallet
 function generateGoogleWalletUrl(client) {
   const credentials = getServiceAccountCredentials();
   if (!credentials) return null;
@@ -85,16 +86,13 @@ function generateGoogleWalletUrl(client) {
 
 // ================= API ROUTES =================
 
-// 1. Get All Clients (For Admin Dashboard)
 app.get('/api/clients', (req, res) => {
   res.json(clients);
 });
 
-// 2. Get Single Client Details & Wallet URL (For Client App)
 app.get('/api/client/:phone', (req, res) => {
   const { phone } = req.params;
 
-  // Enforce 8-digit check
   if (!/^\d{8}$/.test(phone)) {
     return res.status(400).json({ error: 'Phone number must be exactly 8 digits.' });
   }
@@ -108,16 +106,13 @@ app.get('/api/client/:phone', (req, res) => {
   res.json({ ...client, walletUrl });
 });
 
-// 3. Register / Create New Client (Enforcing 8-digit phone & 3-word name)
 app.post('/api/clients', (req, res) => {
   const { phone, name } = req.body;
 
-  // Enforce 8-digit phone number validation
   if (!phone || !/^\d{8}$/.test(phone.trim())) {
     return res.status(400).json({ error: 'Phone number must be strictly 8 digits.' });
   }
 
-  // Enforce exactly 3-word name validation
   const words = name ? name.trim().split(/\s+/) : [];
   if (words.length !== 3) {
     return res.status(400).json({ error: 'Client name must contain exactly 3 words.' });
@@ -125,21 +120,15 @@ app.post('/api/clients', (req, res) => {
 
   const existingClient = clients.find(c => c.phone === phone.trim());
   if (existingClient) {
-    return res.status(400).json({ error: 'A client with this phone number already exists.' });
+    return res.status(400).json({ error: 'Client already exists.' });
   }
 
-  const newClient = {
-    phone: phone.trim(),
-    name: name.trim(),
-    points: 0
-  };
-
+  const newClient = { phone: phone.trim(), name: name.trim(), points: 0 };
   clients.push(newClient);
   const walletUrl = generateGoogleWalletUrl(newClient);
   res.status(201).json({ ...newClient, walletUrl });
 });
 
-// 4. Adjust Client Points (+5, -5, +10, -10 with 0-100 range enforcement)
 app.post('/api/points', (req, res) => {
   const { phone, delta } = req.body;
 
@@ -148,7 +137,6 @@ app.post('/api/points', (req, res) => {
     return res.status(404).json({ error: 'Client not found.' });
   }
 
-  // Apply delta and clamp range between 0 and 100
   let updatedPoints = client.points + parseInt(delta, 10);
   if (updatedPoints < 0) updatedPoints = 0;
   if (updatedPoints > 100) updatedPoints = 100;
@@ -159,7 +147,11 @@ app.post('/api/points', (req, res) => {
   res.json({ success: true, points: client.points, walletUrl });
 });
 
-// Start Server
+// Route redirect for /client
+app.get('/client', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'client.html'));
+});
+
 app.listen(PORT, () => {
   console.log(`O'Tacos Loyalty Server running on port ${PORT}`);
 });
