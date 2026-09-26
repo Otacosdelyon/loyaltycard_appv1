@@ -41,7 +41,7 @@ function getServiceAccountCredentials() {
   }
 }
 
-// Generate Google Wallet JWT Save Link
+// Generate Google Wallet JWT Save Link with Class & Object Definitions
 function generateGoogleWalletUrl(client) {
   const credentials = getServiceAccountCredentials();
   if (!credentials) return null;
@@ -57,6 +57,20 @@ function generateGoogleWalletUrl(client) {
     origins: [baseUrl],
     typ: 'savetowallet',
     payload: {
+      loyaltyClasses: [
+        {
+          id: CLASS_ID,
+          issuerName: "O'Tacos de Lyon",
+          programName: "O'Tacos Loyalty",
+          reviewStatus: 'UNDER_REVIEW',
+          hexBackgroundColor: '#1e293b',
+          programLogo: {
+            sourceUri: {
+              uri: 'https://storage.googleapis.com/wallet-assets/otacos_logo.png'
+            }
+          }
+        }
+      ],
       loyaltyObjects: [
         {
           id: objectId,
@@ -72,7 +86,14 @@ function generateGoogleWalletUrl(client) {
           loyaltyPoints: {
             label: 'Points',
             balance: { string: client.points.toString() }
-          }
+          },
+          textModulesData: [
+            {
+              header: 'Numéro Client',
+              body: client.phone,
+              id: 'phone_module'
+            }
+          ]
         }
       ]
     }
@@ -95,6 +116,25 @@ app.get('/client', (req, res) => {
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// ================= DATABASE HEALTH CHECK =================
+
+app.get('/api/db-test', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW() AS current_time, current_database() AS db_name;');
+    res.json({
+      status: 'Connected',
+      database: result.rows[0].db_name,
+      time: result.rows[0].current_time
+    });
+  } catch (err) {
+    console.error('Database connection error:', err);
+    res.status(500).json({
+      status: 'Disconnected',
+      error: err.message
+    });
+  }
 });
 
 // ================= DATABASE API ROUTES =================
