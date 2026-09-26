@@ -16,6 +16,7 @@
             --border: #334155;
             --success: #16a34a;
             --danger: #dc2626;
+            --gold: #f59e0b;
         }
 
         body {
@@ -100,25 +101,31 @@
             border-color: var(--primary);
         }
 
-        .btn-group {
-            display: flex;
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
             margin-top: 8px;
         }
 
         button {
-            flex: 1;
-            padding: 12px;
+            padding: 12px 6px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: background 0.2s;
         }
 
         .btn-add { background-color: var(--primary); color: #fff; }
         .btn-add:hover { background-color: var(--primary-dark); }
+
+        .btn-sub { background-color: #475569; color: #fff; }
+        .btn-sub:hover { background-color: #334155; }
+
+        .btn-redeem { background-color: var(--success); color: #fff; }
+        .btn-redeem:hover { background-color: #15803d; }
 
         .status-msg {
             padding: 12px;
@@ -148,6 +155,15 @@
         th {
             color: var(--text-muted);
         }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin: 12px 0 6px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -163,9 +179,9 @@
         <div id="reader"></div>
     </div>
 
-    <!-- Manual Input / Add Loyalty Points -->
+    <!-- Manual Input / Manage Points -->
     <div class="card">
-        <h2>🌮 Add Loyalty Points</h2>
+        <h2>🌮 Manage Client Points</h2>
         
         <div class="form-group">
             <label for="phone">Client Phone Number (77XXXXXX)</label>
@@ -181,10 +197,26 @@
             >
         </div>
 
-        <div class="btn-group">
-            <button class="btn-add" onclick="ensureAndAddPoints(10)">+10 Points<br><small>(Tacos)</small></button>
-            <button class="btn-add" onclick="ensureAndAddPoints(5)">+5 Points<br><small>(Burger/Panini)</small></button>
-            <button class="btn-add" onclick="ensureAndAddPoints(2)">+2 Points<br><small>(Breakfast)</small></button>
+        <!-- Add Points -->
+        <div class="section-title">➕ Add Points (1 Circle = 10 Points)</div>
+        <div class="btn-grid">
+            <button class="btn-add" onclick="updatePoints(10)">+10 Points<br><small>(1 Circle / Tacos)</small></button>
+            <button class="btn-add" onclick="updatePoints(5)">+5 Points<br><small>(0.5 Circle / Burger)</small></button>
+            <button class="btn-add" onclick="updatePoints(10)">+10 Points<br><small>(1 Circle / Breakfast)</small></button>
+        </div>
+
+        <!-- Correct Mistakes -->
+        <div class="section-title">✏️ Remove Points (Fix Typo / Error)</div>
+        <div class="btn-grid">
+            <button class="btn-sub" onclick="updatePoints(-1)">-1 Point</button>
+            <button class="btn-sub" onclick="updatePoints(-5)">-5 Points</button>
+            <button class="btn-sub" onclick="updatePoints(-10)">-10 Points</button>
+        </div>
+
+        <!-- Redeem Rewards -->
+        <div class="section-title">🎁 Redeem Reward (Full Card = 100 Points)</div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn-redeem" style="width: 100%;" onclick="updatePoints(-100)">🎉 Redeem 1 Free Taco (-100 Pts)</button>
         </div>
 
         <div id="statusMsg" class="status-msg"></div>
@@ -212,7 +244,6 @@
     const phoneInput = document.getElementById('phone');
     const statusMsg = document.getElementById('statusMsg');
 
-    // Load registered clients list
     async function loadClients() {
         try {
             const res = await fetch('/api/clients');
@@ -222,7 +253,7 @@
                 tableBody.innerHTML = clients.map(c => `
                     <tr>
                         <td>${c.phone}</td>
-                        <td><strong>${c.points} pts</strong></td>
+                        <td><strong>${c.points} pts</strong> (${(c.points / 10).toFixed(1)} circles)</td>
                     </tr>
                 `).join('');
             }
@@ -231,8 +262,7 @@
         }
     }
 
-    // Auto-Creates Client IF Missing, THEN Adds Points
-    async function ensureAndAddPoints(delta) {
+    async function updatePoints(delta) {
         const phone = phoneInput.value.trim();
         const phoneRegex = /^77\d{6}$/;
 
@@ -242,14 +272,14 @@
         }
 
         try {
-            // Step 1: Ensure customer exists (Create if missing)
+            // Ensure client exists first
             await fetch('/api/clients', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone })
             });
 
-            // Step 2: Add Points
+            // Update points
             const res = await fetch('/api/points', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -258,13 +288,14 @@
 
             const data = await res.json();
             if (res.ok) {
-                showStatus(`Success! ${phone} updated. New Total: ${data.points} pts.`, true);
+                const actionText = delta > 0 ? `Added ${delta} points` : `Deducted ${Math.abs(delta)} points`;
+                showStatus(`Success! ${actionText}. New Total: ${data.points} pts.`, true);
                 loadClients();
             } else {
                 showStatus(data.error || 'Failed to update points', false);
             }
         } catch (err) {
-            showStatus('Network error. Please check server connection.', false);
+            showStatus('Network error. Check connection.', false);
         }
     }
 
@@ -282,7 +313,7 @@
         });
     }
 
-    // QR Code Scanner - Prefer Rear Camera
+    // QR Scanner
     const scanner = new Html5QrcodeScanner("reader", { 
         fps: 10, 
         qrbox: 250,
@@ -300,7 +331,6 @@
         }
     });
 
-    // Initial load
     loadClients();
 </script>
 </body>

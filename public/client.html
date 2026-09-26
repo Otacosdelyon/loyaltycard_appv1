@@ -130,17 +130,27 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1rem;
+            font-weight: bold;
             color: var(--text-muted);
             background-color: rgba(15, 23, 42, 0.5);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .stamp-slot.active {
             border: 2px solid var(--gold);
             background-color: var(--gold);
             color: #000;
+            font-size: 1.2rem;
             box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        }
+
+        .stamp-slot.half {
+            border: 2px solid var(--gold);
+            background: linear-gradient(90deg, var(--gold) 50%, rgba(15, 23, 42, 0.5) 50%);
+            color: #fff;
         }
 
         #qrcode {
@@ -221,9 +231,8 @@
     const displayPhone = document.getElementById('displayPhone');
     const stampsGrid = document.getElementById('stampsGrid');
     const errorMsg = document.getElementById('errorMsg');
-    let qrcodeObj = null;
 
-    // Check if user previously logged in on this phone
+    // Load saved phone
     const savedPhone = localStorage.getItem('otacos_phone');
     if (savedPhone && /^77\d{6}$/.test(savedPhone)) {
         phoneInput.value = savedPhone;
@@ -240,7 +249,6 @@
         }
 
         try {
-            // Fetch current client points from backend
             const res = await fetch(`/api/clients`);
             if (res.ok) {
                 const clients = await res.json();
@@ -261,22 +269,34 @@
         loyaltyCard.style.display = 'flex';
         displayPhone.innerText = phone;
 
-        // Calculate current card cycle (1-10) and total rewards earned
-        const currentCardPoints = points % 10 === 0 && points > 0 ? 10 : points % 10;
-        const completedCards = Math.floor((points - (currentCardPoints === 10 ? 10 : currentCardPoints)) / 10);
+        // 1 Circle = 10 Points. Full Card (10 Circles) = 100 Points.
+        const currentCyclePoints = points % 100;
+        const fullCirclesCount = Math.floor(currentCyclePoints / 10);
+        const hasHalfCircle = (currentCyclePoints % 10) >= 5;
+        const completedCards = Math.floor(points / 100);
 
-        // Render 10 stamp slots
+        // Render 10 Circle Slots
         stampsGrid.innerHTML = '';
         for (let i = 1; i <= 10; i++) {
             const slot = document.createElement('div');
-            const isStamped = i <= currentCardPoints;
             
-            slot.className = `stamp-slot ${isStamped ? 'active' : ''}`;
-            slot.innerHTML = isStamped ? '🌮' : i;
+            if (i <= fullCirclesCount) {
+                // Fully Filled Circle (10 Points)
+                slot.className = 'stamp-slot active';
+                slot.innerHTML = '🌮';
+            } else if (i === fullCirclesCount + 1 && hasHalfCircle) {
+                // Half Filled Circle (5 Points)
+                slot.className = 'stamp-slot half';
+                slot.innerHTML = '½';
+            } else {
+                // Empty Circle
+                slot.className = 'stamp-slot';
+                slot.innerHTML = i;
+            }
             stampsGrid.appendChild(slot);
         }
 
-        // Display total point summary and completed cards counter
+        // Point Summary Text
         let summaryText = document.getElementById('pointSummary');
         if (!summaryText) {
             summaryText = document.createElement('p');
@@ -284,12 +304,12 @@
             summaryText.style.cssText = 'font-weight: bold; color: var(--gold); margin: 8px 0;';
             stampsGrid.after(summaryText);
         }
-        summaryText.innerText = `Total Points: ${points} pts` + (completedCards > 0 ? ` (${completedCards} Free Tacos Earned! 🎉)` : '');
+        summaryText.innerText = `Total Points: ${points} pts` + (completedCards > 0 ? ` (${completedCards} Free Taco Rewards Earned! 🎉)` : '');
 
-        // Generate QR code for admin scanner
+        // Generate QR code
         const qrContainer = document.getElementById('qrcode');
         qrContainer.innerHTML = '';
-        qrcodeObj = new QRCode(qrContainer, {
+        new QRCode(qrContainer, {
             text: phone,
             width: 160,
             height: 160,
