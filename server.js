@@ -106,7 +106,7 @@ app.post('/api/clients', async (req, res) => {
     }
 });
 
-// POST Modify points
+// POST Modify points (Blocks adding points if client already has 100 Pts)
 app.post('/api/points', async (req, res) => {
     const { phone, delta } = req.body;
 
@@ -121,6 +121,12 @@ app.post('/api/points', async (req, res) => {
         }
 
         const currentPoints = clientRes.rows[0].points;
+
+        // Block adding points if client has reached 100 points
+        if (currentPoints >= 100 && delta > 0) {
+            return res.status(400).json({ error: 'Merci de réclamer votre surprise !' });
+        }
+
         const updatedPoints = Math.min(100, Math.max(0, currentPoints + delta));
 
         const updateRes = await pool.query(

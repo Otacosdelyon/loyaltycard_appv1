@@ -344,7 +344,13 @@
                 body: JSON.stringify({ phone, delta })
             });
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error);
+
+            if (!response.ok) {
+                if (data.error === 'Merci de réclamer votre surprise !') {
+                    alert('Merci de réclamer votre surprise !');
+                }
+                throw new Error(data.error);
+            }
 
             setStatus(`Points mis à jour pour ${data.name}: ${data.points} Points`, '#ff6600');
             if (!targetPhone) document.getElementById('phone-input').value = '';
@@ -361,7 +367,6 @@
             return setStatus('Veuillez entrer ou scanner un numéro valide de 8 chiffres.', '#f44336');
         }
 
-        // Pre-check client points client-side before prompting confirmation
         try {
             const clientCheck = await fetch(`${API_BASE}/clients/${phone}`);
             const clientData = await clientCheck.json();
