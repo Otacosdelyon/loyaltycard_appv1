@@ -3,7 +3,7 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
@@ -56,23 +56,40 @@ app.post('/api/clients', (req, res) => {
   });
 });
 
-// Update Client Points
+// Update Client Points (Now Auto-Creates New Clients)
 app.post('/api/points', (req, res) => {
-  const { phone, delta } = req.body; // delta can be positive or negative
+  const { phone, delta } = req.body;
   if (!phone || delta === undefined) {
     return res.status(400).json({ error: 'Phone and delta points are required.' });
   }
 
-  db.get('SELECT * FROM clients WHERE phone = ?', [phone], (err, client) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!client) return res.status(404).json({ error: 'Client not found.' });
+  const cleanPhone = phone.trim();
 
-    const newPoints = Math.max(0, client.points + parseInt(delta));
-    
-    db.run('UPDATE clients SET points = ? WHERE phone = ?', [newPoints, phone], (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, phone, points: newPoints });
-    });
+  db.get('SELECT * FROM clients WHERE phone = ?', [cleanPhone], (err, client) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!client) {
+      // Client does not exist -> Create client and set initial points
+      const initialPoints = Math.max(0, parseInt(delta, 10));
+      const clientName = `Customer (${cleanPhone.slice(-4)})`;
+
+      db.run(
+        'INSERT INTO clients (phone, name, points) VALUES (?, ?, ?)',
+        [cleanPhone, clientName, initialPoints],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ success: true, phone: cleanPhone, points: initialPoints });
+        }
+      );
+    } else {
+      // Client exists -> Calculate new points total
+      const newPoints = Math.max(0, client.points + parseInt(delta, 10));
+
+      db.run('UPDATE clients SET points = ? WHERE phone = ?', [newPoints, cleanPhone], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, phone: cleanPhone, points: newPoints });
+      });
+    }
   });
 });
 
