@@ -1,179 +1,165 @@
 const express = require('express');
-const { Pool } = require('pg');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
+
+// Configuration
+const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000023206123';
+const CLASS_ID = `${ISSUER_ID}.otacos_loyalty_card`;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
+// In-Memory Database (Pre-seeded with valid 8-digit phone & 3-word name)
+let clients = [
+  { phone: '12345678', name: 'Samiya Ahmed Loyalty', points: 10 }
+];
 
-async function initDb() {
+// Load Service Account Credentials from Render Env Variable or local JSON file
+function getServiceAccountCredentials() {
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
     try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS clients (
-                phone VARCHAR(20) PRIMARY KEY,
-                name VARCHAR(100),
-                points INT DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-        await pool.query(`
-            ALTER TABLE clients ADD COLUMN IF NOT EXISTS name VARCHAR(100);
-        `);
-        console.log('Neon PostgreSQL database initialized.');
+      return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
     } catch (err) {
-        console.error('Database initialization error:', err);
+      console.error('Error parsing GOOGLE_SERVICE_ACCOUNT_KEY env variable:', err);
+      return null;
     }
+  }
+  try {
+    return require(path.join(__dirname, 'service-account.json'));
+  } catch (err) {
+    console.error('service-account.json file not found locally.');
+    return null;
+  }
 }
 
-initDb();
+// Generate Signed JWT URL for Google Wallet "Save Pass"
+function generateGoogleWalletUrl(client) {
+  const credentials = getServiceAccountCredentials();
+  if (!credentials) return null;
 
-// Helper to validate 8-digit phone number
-function isValidPhone(phone) {
-    return /^\d{8}$/.test(phone);
+  const objectId = `${ISSUER_ID}.${client.phone}`;
+  const baseUrl = process.env.RENDER_EXTERNAL_HOSTNAME 
+    ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` 
+    : 'http://localhost:3000';
+
+  const claims = {
+    iss: credentials.client_email,
+    aud: 'google',
+    origins: [baseUrl],
+    typ: 'savetowallet',
+    payload: {
+      loyaltyObjects: [
+        {
+          id: objectId,
+          classId: CLASS_ID,
+          state: 'ACTIVE',
+          accountName: client.name,
+          accountId: client.phone,
+          barcode: {
+            type: 'QR_CODE',
+            value: client.phone,
+            alternateText: client.phone
+          },
+          loyaltyPoints: {
+            label: 'Points',
+            balance: {
+              string: client.points.toString()
+            }
+          }
+        }
+      ]
+    }
+  };
+
+  try {
+    const token = jwt.sign(claims, credentials.private_key, { algorithm: 'RS256' });
+    return `https://pay.google.com/gp/v/save/${token}`;
+  } catch (err) {
+    console.error('Failed to sign Google Wallet JWT:', err);
+    return null;
+  }
 }
 
-// Serve Pages
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/client', (req, res) => res.sendFile(path.join(__dirname, 'public', 'client.html')));
+// ================= API ROUTES =================
 
-// GET all clients
-app.get('/api/clients', async (req, res) => {
-    try {
-        const { rows } = await pool.query('SELECT phone, name, points FROM clients ORDER BY created_at DESC');
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: 'Erreur serveur lors de la récupération' });
-    }
+// 1. Get All Clients (For Admin Dashboard)
+app.get('/api/clients', (req, res) => {
+  res.json(clients);
 });
 
-// GET specific client
-app.get('/api/clients/:phone', async (req, res) => {
-    const { phone } = req.params;
-    if (!isValidPhone(phone)) {
-        return res.status(400).json({ error: 'Le numéro doit comporter exactement 8 chiffres.' });
-    }
+// 2. Get Single Client Details & Wallet URL (For Client App)
+app.get('/api/client/:phone', (req, res) => {
+  const { phone } = req.params;
 
-    try {
-        const { rows } = await pool.query('SELECT phone, name, points FROM clients WHERE phone = $1', [phone]);
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Client non trouvé' });
-        }
-        res.json(rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: 'Erreur de recherche client' });
-    }
+  // Enforce 8-digit check
+  if (!/^\d{8}$/.test(phone)) {
+    return res.status(400).json({ error: 'Phone number must be exactly 8 digits.' });
+  }
+
+  const client = clients.find(c => c.phone === phone);
+  if (!client) {
+    return res.status(404).json({ error: 'Client not found.' });
+  }
+
+  const walletUrl = generateGoogleWalletUrl(client);
+  res.json({ ...client, walletUrl });
 });
 
-// POST Register new client (Strict 8 digits phone + 3 words name)
-app.post('/api/clients', async (req, res) => {
-    const { phone, name } = req.body;
+// 3. Register / Create New Client (Enforcing 8-digit phone & 3-word name)
+app.post('/api/clients', (req, res) => {
+  const { phone, name } = req.body;
 
-    if (!phone || !name) {
-        return res.status(400).json({ error: 'Le numéro et le nom sont requis.' });
-    }
+  // Enforce 8-digit phone number validation
+  if (!phone || !/^\d{8}$/.test(phone.trim())) {
+    return res.status(400).json({ error: 'Phone number must be strictly 8 digits.' });
+  }
 
-    if (!isValidPhone(phone)) {
-        return res.status(400).json({ error: 'Le numéro de téléphone doit comporter exactement 8 chiffres (ex: 77123456).' });
-    }
+  // Enforce exactly 3-word name validation
+  const words = name ? name.trim().split(/\s+/) : [];
+  if (words.length !== 3) {
+    return res.status(400).json({ error: 'Client name must contain exactly 3 words.' });
+  }
 
-    const nameParts = name.trim().split(/\s+/);
-    if (nameParts.length < 3) {
-        return res.status(400).json({ 
-            error: 'Le nom doit obligatoirement comporter 3 mots (ex: Ahmed Ali Umar).' 
-        });
-    }
+  const existingClient = clients.find(c => c.phone === phone.trim());
+  if (existingClient) {
+    return res.status(400).json({ error: 'A client with this phone number already exists.' });
+  }
 
-    try {
-        const check = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone]);
-        if (check.rows.length > 0) {
-            return res.status(400).json({ error: 'Ce numéro existe déjà.' });
-        }
+  const newClient = {
+    phone: phone.trim(),
+    name: name.trim(),
+    points: 0
+  };
 
-        const insert = await pool.query(
-            'INSERT INTO clients (phone, name, points) VALUES ($1, $2, 0) RETURNING phone, name, points',
-            [phone, name.trim()]
-        );
-        res.json(insert.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: 'Erreur lors de la création du compte' });
-    }
+  clients.push(newClient);
+  const walletUrl = generateGoogleWalletUrl(newClient);
+  res.status(201).json({ ...newClient, walletUrl });
 });
 
-// POST Modify points (Supports positive and negative adjustments, max 100, min 0)
-app.post('/api/points', async (req, res) => {
-    const { phone, delta } = req.body;
+// 4. Adjust Client Points (+5, -5, +10, -10 with 0-100 range enforcement)
+app.post('/api/points', (req, res) => {
+  const { phone, delta } = req.body;
 
-    if (!isValidPhone(phone) || typeof delta !== 'number') {
-        return res.status(400).json({ error: 'Numéro valide de 8 chiffres requis.' });
-    }
+  const client = clients.find(c => c.phone === phone);
+  if (!client) {
+    return res.status(404).json({ error: 'Client not found.' });
+  }
 
-    try {
-        const clientRes = await pool.query('SELECT points, name FROM clients WHERE phone = $1', [phone]);
-        if (clientRes.rows.length === 0) {
-            return res.status(404).json({ error: 'Client non trouvé' });
-        }
+  // Apply delta and clamp range between 0 and 100
+  let updatedPoints = client.points + parseInt(delta, 10);
+  if (updatedPoints < 0) updatedPoints = 0;
+  if (updatedPoints > 100) updatedPoints = 100;
 
-        const currentPoints = clientRes.rows[0].points;
+  client.points = updatedPoints;
+  const walletUrl = generateGoogleWalletUrl(client);
 
-        // Block adding points if client has already reached 100 points
-        if (currentPoints >= 100 && delta > 0) {
-            return res.status(400).json({ error: 'Merci de réclamer votre surprise !' });
-        }
-
-        // Calculate new total bounded between 0 and 100
-        const updatedPoints = Math.min(100, Math.max(0, currentPoints + delta));
-
-        const updateRes = await pool.query(
-            'UPDATE clients SET points = $1 WHERE phone = $2 RETURNING phone, name, points',
-            [updatedPoints, phone]
-        );
-
-        res.json(updateRes.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: 'Erreur lors de la mise à jour des points' });
-    }
+  res.json({ success: true, points: client.points, walletUrl });
 });
 
-// POST Redeem Points (Requires 100 pts minimum)
-app.post('/api/redeem', async (req, res) => {
-    const { phone } = req.body;
-
-    if (!isValidPhone(phone)) {
-        return res.status(400).json({ error: 'Numéro valide de 8 chiffres requis.' });
-    }
-
-    try {
-        const clientRes = await pool.query('SELECT points, name FROM clients WHERE phone = $1', [phone]);
-        if (clientRes.rows.length === 0) {
-            return res.status(404).json({ error: 'Client non trouvé' });
-        }
-
-        const currentPoints = clientRes.rows[0].points;
-
-        if (currentPoints < 100) {
-            const needed = 100 - currentPoints;
-            return res.status(400).json({ 
-                error: `Désolé vous n'avez pas assez de points pour votre surprise ! Encore ${needed} Pts à cotiser` 
-            });
-        }
-
-        const updateRes = await pool.query(
-            'UPDATE clients SET points = 0 WHERE phone = $1 RETURNING phone, name, points',
-            [phone]
-        );
-
-        res.json({ message: 'Points réinitialisés à 0', client: updateRes.rows[0] });
-    } catch (err) {
-        res.status(500).json({ error: 'Erreur lors de la réinitialisation des points' });
-    }
+// Start Server
+app.listen(PORT, () => {
+  console.log(`O'Tacos Loyalty Server running on port ${PORT}`);
 });
-app.use(express.static(path.join(__dirname, 'public')));
-const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000023206123';
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
