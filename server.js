@@ -23,11 +23,10 @@ async function initDb() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-        // Migration: Add name column if upgrading from older schema
         await pool.query(`
             ALTER TABLE clients ADD COLUMN IF NOT EXISTS name VARCHAR(100);
         `);
-        console.log('Neon PostgreSQL database initialized with name support.');
+        console.log('Neon PostgreSQL database initialized.');
     } catch (err) {
         console.error('Database initialization error:', err);
     }
@@ -35,7 +34,7 @@ async function initDb() {
 
 initDb();
 
-// Serve Static Pages
+// Serve Pages
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/client', (req, res) => res.sendFile(path.join(__dirname, 'public', 'client.html')));
 
@@ -45,7 +44,7 @@ app.get('/api/clients', async (req, res) => {
         const { rows } = await pool.query('SELECT phone, name, points FROM clients ORDER BY created_at DESC');
         res.json(rows);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch clients' });
+        res.status(500).json({ error: 'Erreur serveur lors de la récupération' });
     }
 });
 
@@ -59,21 +58,31 @@ app.get('/api/clients/:phone', async (req, res) => {
         }
         res.json(rows[0]);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch client' });
+        res.status(500).json({ error: 'Erreur de recherche client' });
     }
 });
 
-// POST Register new client or update points
+// POST Register new client with mandatory 3-part name check
 app.post('/api/clients', async (req, res) => {
     const { phone, name } = req.body;
+
     if (!phone || !name) {
-        return res.status(400).json({ error: 'Le numéro et le nom complet (3 mots) sont requis' });
+        return res.status(400).json({ error: 'Le numéro et le nom sont requis.' });
+    }
+
+    // Split name by spaces and filter out empty strings
+    const nameParts = name.trim().split(/\s+/);
+
+    if (nameParts.length < 3) {
+        return res.status(400).json({ 
+            error: 'Le nom doit obligatoirement comporter 3 mots (ex: Ahmed Ali Umar).' 
+        });
     }
 
     try {
         const check = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone]);
         if (check.rows.length > 0) {
-            return res.status(400).json({ error: 'Ce numéro existe déjà dans le système' });
+            return res.status(400).json({ error: 'Ce numéro existe déjà.' });
         }
 
         const insert = await pool.query(
@@ -86,7 +95,7 @@ app.post('/api/clients', async (req, res) => {
     }
 });
 
-// POST Add or Deduct Points
+// POST Modify points
 app.post('/api/points', async (req, res) => {
     const { phone, delta } = req.body;
     if (!phone || typeof delta !== 'number') {

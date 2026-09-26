@@ -50,6 +50,7 @@
             font-weight: bold;
             color: #ffffff;
             margin-bottom: 5px;
+            text-transform: capitalize;
         }
 
         .client-phone {
@@ -136,13 +137,13 @@
         <div id="error-message" class="error-msg"></div>
     </div>
 
-    <!-- Client Profile Portal Card -->
+    <!-- Customer Details & QR Code -->
     <div class="card" id="profile-card" style="display: none;">
-        <div class="client-name" id="display-name">X Y Z</div>
+        <div class="client-name" id="display-name"></div>
         <div class="client-phone" id="display-phone"></div>
 
         <div id="client-qrcode"></div>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Présentez ce QR code à la caisse pour vos points</p>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Scannez ce QR Code à la caisse</p>
 
         <div id="points-display" class="points-display">0 Points</div>
 
@@ -179,14 +180,14 @@
 
             const data = await response.json();
 
-            // Render Client Details
-            nameEl.innerText = data.name || 'Client Fidélité';
+            // Display full 3-part name
+            nameEl.innerText = data.name || 'Client';
             phoneEl.innerText = `Tél: ${data.phone}`;
 
             const points = Math.min(100, data.points);
             pointsEl.innerText = `${points} Points`;
 
-            // Render Personal QR Code
+            // Display QR Code
             qrContainer.innerHTML = '';
             new QRCode(qrContainer, { text: data.phone, width: 150, height: 150 });
 

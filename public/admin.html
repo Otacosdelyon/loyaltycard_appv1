@@ -71,7 +71,7 @@
             padding: 12px 16px;
             border-radius: 8px;
             font-size: 1rem;
-            width: 220px;
+            width: 250px;
             outline: none;
         }
 
@@ -161,6 +161,14 @@
             min-height: 24px;
             margin-top: 10px;
         }
+
+        .hint {
+            font-size: 0.85rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: -5px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -170,25 +178,26 @@
         <h1>O'Tacos - Administration Fidélité</h1>
     </div>
 
-    <!-- 1. Create New Account (First Time Logging in) -->
+    <!-- 1. Registration Section -->
     <div class="card">
-        <h2>Créer un Nouveau Compte Client (1ère Visite)</h2>
+        <h2>Enregistrer un Nouveau Client (1ère Visite)</h2>
         <div class="form-row">
             <input type="text" id="new-phone" placeholder="Numéro (ex: 77111111)" required>
             <input type="text" id="new-name" placeholder="Nom complet (ex: Ahmed Ali Umar)" required>
-            <button class="btn" onclick="registerClient()">Enregistrer Client</button>
+            <button class="btn" onclick="registerClient()">Enregistrer & Générer QR</button>
         </div>
+        <div class="hint">⚠️ Le nom doit obligatoirement comporter 3 mots (ex: Prénom Second-prénom Nom).</div>
         
         <!-- Generated QR Code Display -->
         <div id="qr-output" class="qr-output-card">
             <h3 style="color: var(--primary-orange); margin:0;" id="qr-client-name"></h3>
             <p style="margin: 5px 0; color: var(--text-muted);" id="qr-client-phone"></p>
             <div id="qrcode"></div>
-            <p style="font-size: 0.85rem; color: #aaa;">Le client peut scanner ou enregistrer ce QR code pour se connecter dans son portal.</p>
+            <p style="font-size: 0.85rem; color: #aaa;">Prenez en photo ou imprimez ce QR code pour le client.</p>
         </div>
     </div>
 
-    <!-- 2. Scan & Manage Points -->
+    <!-- 2. Point Allocation & Scanner -->
     <div class="card">
         <h2>Scanner QR Code & Ajouter Points</h2>
         <div id="qr-reader"></div>
@@ -203,14 +212,14 @@
         <div id="status-message" class="status-msg"></div>
     </div>
 
-    <!-- 3. Directory Table -->
+    <!-- 3. Client Directory -->
     <div class="card">
         <h2>Liste des Clients</h2>
         <table>
             <thead>
                 <tr>
                     <th>Téléphone</th>
-                    <th>Nom Complet</th>
+                    <th>Nom (3 Mots)</th>
                     <th>Points</th>
                     <th>Actions</th>
                 </tr>
@@ -231,13 +240,20 @@
     let html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } });
     html5QrcodeScanner.render(onScanSuccess);
 
-    // Register First Time Client & Generate QR Code
+    // Register Client with Strictly 3 Names Validation
     async function registerClient() {
         const phone = document.getElementById('new-phone').value.trim();
         const name = document.getElementById('new-name').value.trim();
 
         if (!phone || !name) {
-            alert('Veuillez renseigner le numéro et les 3 noms.');
+            alert('Veuillez renseigner le numéro et le nom complet.');
+            return;
+        }
+
+        // Validate 3 words
+        const nameParts = name.split(/\s+/);
+        if (nameParts.length < 3) {
+            alert('ERREUR: Le nom doit obligatoirement comporter 3 mots ! Ex: Ahmed Ali Umar');
             return;
         }
 
@@ -251,7 +267,7 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
 
-            // Display generated QR code
+            // Display QR
             document.getElementById('qr-client-name').innerText = data.name;
             document.getElementById('qr-client-phone').innerText = `Tél: ${data.phone}`;
             
