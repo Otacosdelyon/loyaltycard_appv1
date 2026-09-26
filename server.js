@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 
 const app = express();
@@ -9,14 +10,14 @@ const PORT = process.env.PORT || 3000;
 const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000023206123';
 const CLASS_ID = `${ISSUER_ID}.otacos_loyalty_card`;
 
-app.use(express.json());
-// Serves static files (client.html, otacoslogo.png, etc.) from the public folder
-app.use(express.static(path.join(__dirname, 'public')));
+// Neon PostgreSQL Connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-// In-Memory Database
-let clients = [
-  { phone: '12345678', name: 'Samiya Ahmed Loyalty', points: 10 }
-];
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Load Service Account Credentials
 function getServiceAccountCredentials() {
@@ -84,29 +85,54 @@ function generateGoogleWalletUrl(client) {
   }
 }
 
-// ================= API ROUTES =================
+// ================= CLEAN URL ROUTES (Without .html) =================
 
-app.get('/api/clients', (req, res) => {
-  res.json(clients);
+app.get('/client', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'client.html'));
 });
 
-app.get('/api/client/:phone', (req, res) => {
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// ================= POSTGRESQL API ROUTES =================
+
+// 1. Get All Clients (For Admin Dashboard from Neon)
+app.get('/api/clients', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM clients ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Database query error:', err);
+    res.status(500).json({ error: 'Database fetch failed' });
+  }
+});
+
+// 2. Get Single Client Details & Wallet Link (For Client App from Neon)
+app.get('/api/client/:phone', async (req, res) => {
   const { phone } = req.params;
 
   if (!/^\d{8}$/.test(phone)) {
     return res.status(400).json({ error: 'Phone number must be exactly 8 digits.' });
   }
 
-  const client = clients.find(c => c.phone === phone);
-  if (!client) {
-    return res.status(404).json({ error: 'Client not found.' });
-  }
+  try {
+    const result = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Client not found.' });
+    }
 
-  const walletUrl = generateGoogleWalletUrl(client);
-  res.json({ ...client, walletUrl });
+    const client = result.rows[0];
+    const walletUrl = generateGoogleWalletUrl(client);
+    res.json({ ...client, walletUrl });
+  } catch (err) {
+    console.error('Database query error:', err);
+    res.status(500).json({ error: 'Database lookup failed' });
+  }
 });
 
-app.post('/api/clients', (req, res) => {
+// 3. Register / Create New Client in Neon (8-digit phone & 3-word name validation)
+app.post('/api/clients', async (req, res) => {
   const { phone, name } = req.body;
 
   if (!phone || !/^\d{8}$/.test(phone.trim())) {
@@ -118,40 +144,57 @@ app.post('/api/clients', (req, res) => {
     return res.status(400).json({ error: 'Client name must contain exactly 3 words.' });
   }
 
-  const existingClient = clients.find(c => c.phone === phone.trim());
-  if (existingClient) {
-    return res.status(400).json({ error: 'Client already exists.' });
-  }
+  try {
+    const checkUser = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone.trim()]);
+    if (checkUser.rows.length > 0) {
+      return res.status(400).json({ error: 'Client already exists.' });
+    }
 
-  const newClient = { phone: phone.trim(), name: name.trim(), points: 0 };
-  clients.push(newClient);
-  const walletUrl = generateGoogleWalletUrl(newClient);
-  res.status(201).json({ ...newClient, walletUrl });
+    const insertResult = await pool.query(
+      'INSERT INTO clients (phone, name, points) VALUES ($1, $2, $3) RETURNING *',
+      [phone.trim(), name.trim(), 0]
+    );
+
+    const newClient = insertResult.rows[0];
+    const walletUrl = generateGoogleWalletUrl(newClient);
+    res.status(201).json({ ...newClient, walletUrl });
+  } catch (err) {
+    console.error('Database insert error:', err);
+    res.status(500).json({ error: 'Failed to create client in database' });
+  }
 });
 
-app.post('/api/points', (req, res) => {
+// 4. Adjust Client Points in Neon (0-100 Range Limit)
+app.post('/api/points', async (req, res) => {
   const { phone, delta } = req.body;
 
-  const client = clients.find(c => c.phone === phone);
-  if (!client) {
-    return res.status(404).json({ error: 'Client not found.' });
+  try {
+    const userResult = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Client not found.' });
+    }
+
+    const client = userResult.rows[0];
+    let updatedPoints = client.points + parseInt(delta, 10);
+    if (updatedPoints < 0) updatedPoints = 0;
+    if (updatedPoints > 100) updatedPoints = 100;
+
+    const updateResult = await pool.query(
+      'UPDATE clients SET points = $1 WHERE phone = $2 RETURNING *',
+      [updatedPoints, phone]
+    );
+
+    const updatedClient = updateResult.rows[0];
+    const walletUrl = generateGoogleWalletUrl(updatedClient);
+
+    res.json({ success: true, points: updatedClient.points, walletUrl });
+  } catch (err) {
+    console.error('Database update error:', err);
+    res.status(500).json({ error: 'Failed to update points in database' });
   }
-
-  let updatedPoints = client.points + parseInt(delta, 10);
-  if (updatedPoints < 0) updatedPoints = 0;
-  if (updatedPoints > 100) updatedPoints = 100;
-
-  client.points = updatedPoints;
-  const walletUrl = generateGoogleWalletUrl(client);
-
-  res.json({ success: true, points: client.points, walletUrl });
 });
 
-// Route redirect for /client
-app.get('/client', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'client.html'));
-});
-
+// Start Server
 app.listen(PORT, () => {
   console.log(`O'Tacos Loyalty Server running on port ${PORT}`);
 });
