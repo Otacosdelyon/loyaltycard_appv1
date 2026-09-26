@@ -15,6 +15,8 @@
             --text-color: #ffffff;
             --text-muted: #aaaaaa;
             --border-color: #2a2a2a;
+            --danger-red: #d9534f;
+            --danger-red-hover: #c9302c;
         }
 
         body {
@@ -26,7 +28,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
         }
 
@@ -71,7 +73,7 @@
             padding: 12px 16px;
             border-radius: 8px;
             font-size: 1rem;
-            width: 250px;
+            width: 240px;
             outline: none;
         }
 
@@ -99,6 +101,16 @@
             background-color: #333333;
             color: #ffffff;
             border: 1px solid var(--border-color);
+        }
+
+        .btn-redeem {
+            background-color: var(--danger-red);
+            color: #ffffff;
+            border: none;
+        }
+
+        .btn-redeem:hover {
+            background-color: var(--danger-red-hover);
         }
 
         #qr-reader {
@@ -169,6 +181,12 @@
             margin-top: -5px;
             margin-bottom: 10px;
         }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -199,7 +217,7 @@
 
     <!-- 2. Point Allocation & Scanner -->
     <div class="card">
-        <h2>Scanner QR Code & Ajouter Points</h2>
+        <h2>Scanner QR Code & Gérer les Points</h2>
         <div id="qr-reader"></div>
 
         <div class="form-row">
@@ -208,6 +226,7 @@
             <button class="btn" onclick="modifyPoints(5)">+5 Pts (Burger)</button>
             <button class="btn" onclick="modifyPoints(10)">+10 Pts (Breakfast)</button>
             <button class="btn btn-minus" onclick="modifyPoints(-5)">-5 Pts</button>
+            <button class="btn btn-redeem" onclick="redeemPoints()">Redeem 100 Pts!</button>
         </div>
         <div id="status-message" class="status-msg"></div>
     </div>
@@ -240,7 +259,7 @@
     let html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } });
     html5QrcodeScanner.render(onScanSuccess);
 
-    // Register Client with Strictly 3 Names Validation
+    // Register Client with 3-Word Name Check
     async function registerClient() {
         const phone = document.getElementById('new-phone').value.trim();
         const name = document.getElementById('new-name').value.trim();
@@ -250,7 +269,6 @@
             return;
         }
 
-        // Validate 3 words
         const nameParts = name.split(/\s+/);
         if (nameParts.length < 3) {
             alert('ERREUR: Le nom doit obligatoirement comporter 3 mots ! Ex: Ahmed Ali Umar');
@@ -267,7 +285,6 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
 
-            // Display QR
             document.getElementById('qr-client-name').innerText = data.name;
             document.getElementById('qr-client-phone').innerText = `Tél: ${data.phone}`;
             
@@ -298,8 +315,11 @@
                     <td>${client.name || 'N/A'}</td>
                     <td><span class="points-badge">${client.points} Points</span></td>
                     <td>
-                        <button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', 10)">+10</button>
-                        <button class="btn btn-minus" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', -5)">-5</button>
+                        <div class="action-btns">
+                            <button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', 10)">+10</button>
+                            <button class="btn btn-minus" style="padding: 4px 8px; font-size: 0.8rem;" onclick="setDirectPhone('${client.phone}', -5)">-5</button>
+                            <button class="btn btn-redeem" style="padding: 4px 8px; font-size: 0.8rem;" onclick="redeemPoints('${client.phone}')">Redeem 100 Pts!</button>
+                        </div>
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -323,6 +343,32 @@
             if (!response.ok) throw new Error(data.error);
 
             setStatus(`Points mis à jour pour ${data.name}: ${data.points} Points`, '#ff6600');
+            if (!targetPhone) document.getElementById('phone-input').value = '';
+            loadClients();
+        } catch (err) {
+            setStatus(err.message, '#f44336');
+        }
+    }
+
+    // Redeem 100 Pts: NILLs points back to 0
+    async function redeemPoints(targetPhone = null) {
+        const phone = targetPhone || document.getElementById('phone-input').value.trim();
+        if (!phone) return setStatus('Veuillez entrer ou scanner un numéro.', '#f44336');
+
+        if (!confirm(`Confirmer la réinitialisation (NILL) des points à 0 pour le numéro ${phone} ?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/redeem`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            setStatus(`Récompense validée ! Points réinitialisés à 0 pour ${data.client.name}`, '#4CAF50');
             if (!targetPhone) document.getElementById('phone-input').value = '';
             loadClients();
         } catch (err) {

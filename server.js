@@ -70,7 +70,6 @@ app.post('/api/clients', async (req, res) => {
         return res.status(400).json({ error: 'Le numéro et le nom sont requis.' });
     }
 
-    // Split name by spaces and filter out empty strings
     const nameParts = name.trim().split(/\s+/);
 
     if (nameParts.length < 3) {
@@ -119,6 +118,30 @@ app.post('/api/points', async (req, res) => {
         res.json(updateRes.rows[0]);
     } catch (err) {
         res.status(500).json({ error: 'Erreur lors de la mise à jour des points' });
+    }
+});
+
+// POST Redeem Points (Resets points to 0)
+app.post('/api/redeem', async (req, res) => {
+    const { phone } = req.body;
+    if (!phone) {
+        return res.status(400).json({ error: 'Numéro de téléphone requis' });
+    }
+
+    try {
+        const clientRes = await pool.query('SELECT points, name FROM clients WHERE phone = $1', [phone]);
+        if (clientRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Client non trouvé' });
+        }
+
+        const updateRes = await pool.query(
+            'UPDATE clients SET points = 0 WHERE phone = $1 RETURNING phone, name, points',
+            [phone]
+        );
+
+        res.json({ message: 'Points réinitialisés à 0', client: updateRes.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: 'Erreur lors de la réinitialisation des points' });
     }
 });
 
