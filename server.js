@@ -46,11 +46,9 @@ function generateGoogleWalletUrl(client) {
   const credentials = getServiceAccountCredentials();
   if (!credentials) return null;
 
-  // Sanitize the phone number for the Object ID
   const cleanPhone = client.phone.replace(/[^a-zA-Z0-9_.-]/g, '');
-  // Appending Date.now() ensures a fresh, non-conflicting Object ID on every save attempt
   const objectId = `${ISSUER_ID}.${cleanPhone}_${Date.now()}`;
-  
+
   const claims = {
     iss: credentials.client_email,
     aud: 'google',
@@ -60,23 +58,28 @@ function generateGoogleWalletUrl(client) {
       loyaltyObjects: [
         {
           id: objectId,
-          classId: CLASS_ID, // Evaluates to '3388000000023206123.otacos_loyalty_card'
+          classId: CLASS_ID,
           state: 'ACTIVE',
-          accountName: client.name || 'Client O\'Tacos',
+          accountName: client.name || "Client O'Tacos",
           accountId: client.phone,
-          // Explicit Barcode definition for QR Code
           barcode: {
             type: 'QR_CODE',
             value: client.phone,
             alternateText: client.phone
           },
-          // Loyalty Points Display
           loyaltyPoints: {
             label: 'Points',
             balance: {
               string: String(client.points || 0)
             }
-          }
+          },
+          textModulesData: [
+            {
+              header: 'Membre',
+              body: client.name || "Client O'Tacos",
+              id: 'member_name'
+            }
+          ]
         }
       ]
     }
