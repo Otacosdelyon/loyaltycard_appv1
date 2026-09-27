@@ -48,8 +48,9 @@ function generateGoogleWalletUrl(client) {
 
   // Sanitize the phone number for the Object ID
   const cleanPhone = client.phone.replace(/[^a-zA-Z0-9_.-]/g, '');
-  const objectId = `${ISSUER_ID}.${cleanPhone}`;
-
+  // Appending Date.now() ensures a fresh, non-conflicting Object ID on every save attempt
+  const objectId = `${ISSUER_ID}.${cleanPhone}_${Date.now()}`;
+  
   const claims = {
     iss: credentials.client_email,
     aud: 'google',
