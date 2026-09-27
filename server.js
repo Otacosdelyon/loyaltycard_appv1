@@ -46,11 +46,10 @@ function generateGoogleWalletUrl(client) {
   const credentials = getServiceAccountCredentials();
   if (!credentials) return null;
 
-  // 1. Sanitize object ID (must contain only alphanumeric, underscores, hyphens, or periods)
+  // Sanitize the phone number for the Object ID
   const cleanPhone = client.phone.replace(/[^a-zA-Z0-9_.-]/g, '');
   const objectId = `${ISSUER_ID}.${cleanPhone}`;
 
-  // 2. Minimal valid payload
   const claims = {
     iss: credentials.client_email,
     aud: 'google',
@@ -60,15 +59,17 @@ function generateGoogleWalletUrl(client) {
       loyaltyObjects: [
         {
           id: objectId,
-          classId: CLASS_ID, // Must be explicit: '3388000000023206123.otacos_loyalty_card'
+          classId: CLASS_ID, // Evaluates to '3388000000023206123.otacos_loyalty_card'
           state: 'ACTIVE',
-          accountName: client.name,
+          accountName: client.name || 'Client O\'Tacos',
           accountId: client.phone,
+          // Explicit Barcode definition for QR Code
           barcode: {
             type: 'QR_CODE',
             value: client.phone,
             alternateText: client.phone
           },
+          // Loyalty Points Display
           loyaltyPoints: {
             label: 'Points',
             balance: {
@@ -88,7 +89,6 @@ function generateGoogleWalletUrl(client) {
     return null;
   }
 }
-
 // ================= CLEAN UI ROUTES =================
 
 app.get('/client', (req, res) => {
