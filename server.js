@@ -6,10 +6,16 @@ const { GoogleAuth } = require('google-auth-library');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+//Logo from CLient
+app.use(express.static('public'));
+//End of Logo from Client
+
 // Redirect root URL directly to the client loyalty page
 app.get('/', (req, res) => {
   res.redirect('/client');
 });
+
 // ============================================================
 // GOOGLE WALLET CONFIGURATION
 // ============================================================
