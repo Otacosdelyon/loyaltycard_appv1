@@ -57,20 +57,6 @@ function generateGoogleWalletUrl(client) {
     origins: [baseUrl],
     typ: 'savetowallet',
     payload: {
-      loyaltyClasses: [
-        {
-          id: CLASS_ID,
-          issuerName: "O'Tacos de Lyon",
-          programName: "O'Tacos Loyalty",
-          reviewStatus: 'UNDER_REVIEW',
-          hexBackgroundColor: '#1e293b',
-          programLogo: {
-            sourceUri: {
-              uri: 'https://storage.googleapis.com/wallet-assets/otacos_logo.png'
-            }
-          }
-        }
-      ],
       loyaltyObjects: [
         {
           id: objectId,
@@ -86,14 +72,7 @@ function generateGoogleWalletUrl(client) {
           loyaltyPoints: {
             label: 'Points',
             balance: { string: client.points.toString() }
-          },
-          textModulesData: [
-            {
-              header: 'Numéro Client',
-              body: client.phone,
-              id: 'phone_module'
-            }
-          ]
+          }
         }
       ]
     }
