@@ -46,21 +46,21 @@ function generateGoogleWalletUrl(client) {
   const credentials = getServiceAccountCredentials();
   if (!credentials) return null;
 
-  const objectId = `${ISSUER_ID}.${client.phone}`;
-  const baseUrl = process.env.RENDER_EXTERNAL_HOSTNAME 
-    ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` 
-    : 'http://localhost:3000';
+  // 1. Sanitize object ID (must contain only alphanumeric, underscores, hyphens, or periods)
+  const cleanPhone = client.phone.replace(/[^a-zA-Z0-9_.-]/g, '');
+  const objectId = `${ISSUER_ID}.${cleanPhone}`;
 
+  // 2. Minimal valid payload
   const claims = {
     iss: credentials.client_email,
     aud: 'google',
-    origins: [baseUrl],
+    origins: ['https://pay.google.com'],
     typ: 'savetowallet',
     payload: {
       loyaltyObjects: [
         {
           id: objectId,
-          classId: CLASS_ID,
+          classId: CLASS_ID, // Must be explicit: '3388000000023206123.otacos_loyalty_card'
           state: 'ACTIVE',
           accountName: client.name,
           accountId: client.phone,
@@ -71,7 +71,9 @@ function generateGoogleWalletUrl(client) {
           },
           loyaltyPoints: {
             label: 'Points',
-            balance: { string: client.points.toString() }
+            balance: {
+              string: String(client.points || 0)
+            }
           }
         }
       ]
