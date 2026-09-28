@@ -188,23 +188,74 @@
     });
 
     async function registerClient() {
-      const name = document.getElementById('newName').value;
-      const phone = document.getElementById('newPhone').value;
+  const nameInput = document.getElementById('newName');
+  const phoneInput = document.getElementById('newPhone');
+  const errorMsgContainer = document.getElementById('registerError'); // or your error message <div>
 
-      const res = await fetch('/api/clients/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone })
-      });
+  const name = nameInput ? nameInput.value.trim() : '';
+  const phone = phoneInput ? phoneInput.value.trim() : '';
 
-      const data = await res.json();
-      if (!res.ok) return alert(data.error);
+  // 1. Client-side Validation (Check before hitting API)
+  if (!/^\d{8}$/.test(phone)) {
+    showError('Le numéro doit comporter exactement 8 chiffres.');
+    return;
+  }
 
-      alert('Client enregistré avec succès!');
-      document.getElementById('newName').value = '';
-      document.getElementById('newPhone').value = '';
-      loadClientsList();
+  const words = name.split(/\s+/).filter(w => w.length > 0);
+  if (words.length < 3) {
+    showError('Veuillez saisir un nom complet contenant au moins 3 mots (ex: Ahmed Ali Umar).');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/clients/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone })
+    });
+
+    // 2. Safe Response Handling (Check Content-Type before parsing JSON)
+    const contentType = res.headers.get('content-type');
+    let data = {};
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      throw new Error(`Erreur serveur (${res.status}). Veuillez réessayez.`);
     }
+
+    if (!res.ok) {
+      showError(data.error || 'Une erreur s’est produite lors de l’enregistrement.');
+      return;
+    }
+
+    // Success!
+    alert('Client enregistré avec succès !');
+    if (nameInput) nameInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+    if (errorMsgContainer) errorMsgContainer.style.display = 'none';
+    
+    if (typeof loadClientsList === 'function') loadClientsList();
+
+  } catch (err) {
+    showError(err.message || 'Impossible de se connecter au serveur.');
+  }
+}
+
+// Helper to display clean user-friendly red error text
+function showError(message) {
+  let errorEl = document.getElementById('registerError');
+  if (!errorEl) {
+    errorEl = document.createElement('div');
+    errorEl.id = 'registerError';
+    errorEl.style.color = '#ff4d4d';
+    errorEl.style.marginTop = '10px';
+    errorEl.style.fontWeight = 'bold';
+    document.querySelector('.block').appendChild(errorEl);
+  }
+  errorEl.innerText = message;
+  errorEl.style.display = 'block';
+}
 
     async function searchClientByPhone(phone) {
       const res = await fetch(`/api/clients/${phone}`);
