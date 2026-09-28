@@ -170,7 +170,18 @@
     }
 
     // Initialize HTML5 Scanner Component directly in dashed box
-    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 } });
+    //const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 } });
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+  "reader", 
+  { 
+    fps: 10, 
+    qrbox: { width: 250, height: 250 },
+    videoConstraints: {
+      facingMode: { ideal: "environment" }
+    }
+  },
+  /* verbose= */ false
+);
     html5QrcodeScanner.render((decodedText) => {
       document.getElementById('searchPhone').value = decodedText;
       searchClientByPhone(decodedText);
