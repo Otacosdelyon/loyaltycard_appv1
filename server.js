@@ -7,7 +7,6 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// PostgreSQL Database Connection Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -15,21 +14,15 @@ const pool = new Pool({
 
 const MANAGER_PIN = process.env.MANAGER_PIN || '1234';
 
-// Helper: Validate 8-digit phone numbers
 const isValidPhone = (phone) => /^\d{8}$/.test(phone);
 
-// Helper: Validate full name with at least 3 words (e.g., "Ahmed Ali Umar")
 const isValidName = (name) => {
   if (!name) return false;
   const words = name.trim().split(/\s+/);
   return words.length >= 3;
 };
 
-// -------------------------------------------------------------
-// API ROUTES
-// -------------------------------------------------------------
-
-// 1. Manager Authentication / Login API
+// 1. Manager Login
 app.post('/api/admin/login', (req, res) => {
   const { pin } = req.body;
   if (pin === MANAGER_PIN) {
@@ -39,7 +32,7 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
-// 2. Register New Client (Enforces 8-digit unique phone & min 3 words name)
+// 2. Register Client
 app.post('/api/clients/register', async (req, res) => {
   const { phone, name } = req.body;
 
@@ -67,7 +60,7 @@ app.post('/api/clients/register', async (req, res) => {
   }
 });
 
-// 3. Get Single Client Details by Phone
+// 3. Get Single Client
 app.get('/api/clients/:phone', async (req, res) => {
   const { phone } = req.params;
   try {
@@ -79,7 +72,7 @@ app.get('/api/clients/:phone', async (req, res) => {
   }
 });
 
-// 4. Get All Clients List (For Admin Block 3)
+// 4. Get All Clients List
 app.get('/api/clients', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM clients ORDER BY created_at DESC');
@@ -89,14 +82,14 @@ app.get('/api/clients', async (req, res) => {
   }
 });
 
-// 5. Add Points (Allowed for both Supervisor & Manager)
+// 5. Add Points (CAP AT 100 PTS)
 app.post('/api/clients/add-points', async (req, res) => {
   const { phone, pointsToAdd } = req.body;
   if (!isValidPhone(phone)) return res.status(400).json({ error: 'Numéro invalide.' });
 
   try {
     const result = await pool.query(
-      'UPDATE clients SET points = points + $1 WHERE phone = $2 RETURNING *',
+      'UPDATE clients SET points = LEAST(100, points + $1) WHERE phone = $2 RETURNING *',
       [pointsToAdd, phone]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Client introuvable.' });
@@ -106,7 +99,7 @@ app.post('/api/clients/add-points', async (req, res) => {
   }
 });
 
-// 6. Remove Points (Manager Only — Requires Valid PIN)
+// 6. Remove Points
 app.post('/api/clients/remove-points', async (req, res) => {
   const { phone, pointsToRemove, pin } = req.body;
   if (pin !== MANAGER_PIN) return res.status(403).json({ error: 'Code PIN Manager incorrect.' });
@@ -124,7 +117,7 @@ app.post('/api/clients/remove-points', async (req, res) => {
   }
 });
 
-// 7. Redeem Points ("Convertir mes points" — Allowed for both roles)
+// 7. Redeem Points (100 Pts to 0)
 app.post('/api/clients/redeem', async (req, res) => {
   const { phone } = req.body;
 
@@ -148,6 +141,5 @@ app.post('/api/clients/redeem', async (req, res) => {
   }
 });
 
-// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
