@@ -1,7 +1,16 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'Tacos Loyalty</title>
+  
+  <!-- Add your logo as the website favicon -->
+  <link rel="icon" type="image/png" href="/otacoslogo.png">
+</head>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>O'Tacos Loyalty</title>
@@ -45,7 +54,9 @@
   </style>
 </head>
 <body>
+
   <h1 class="header-title">O'TACOS LOYALTY</h1>
+
   <!-- Login Form -->
   <div id="login-section" class="login-box">
     <h2 style="margin-bottom: 10px;">Espace Client</h2>
@@ -53,11 +64,13 @@
     <input type="tel" id="phone-input" class="input-field" placeholder="Ex: 77111113" maxlength="8">
     <button onclick="loginClient()" class="submit-btn">Accéder à ma carte</button>
   </div>
+
   <!-- Client Loyalty Card -->
   <div id="card-section" class="card" style="display: none;">
     <div id="client-phone" class="phone-badge">77111113</div>
     <div id="client-name" class="client-name">Nom du Client</div>
     <div id="points-count" class="points-text">0 Total Points</div>
+
     <!-- 10 Stamps -->
     <div class="stamps-grid">
       <div class="stamp" id="stamp-1">1</div>
@@ -71,23 +84,28 @@
       <div class="stamp" id="stamp-9">9</div>
       <div class="stamp" id="stamp-10">10</div>
     </div>
+
     <!-- QR Code -->
     <div class="qr-container">
       <img id="qr-image" src="" alt="QR Code">
     </div>
     <div class="scan-text">Scannez ce QR Code à la caisse</div>
+
     <!-- Google Wallet Button Directly Under QR Code -->
     <div class="wallet-container">
       <a id="wallet-link" class="wallet-btn" href="#" target="_blank" style="display: none;">
         <img src="https://pay.google.com/gp/v/static/images/badges/fr_FR_add_to_google_wallet_add-to-wallet-badge.svg" alt="Ajouter à Google Wallet">
       </a>
     </div>
+
     <!-- 100 Pts Banner -->
     <div id="reward-banner" class="reward-banner">
       🎉 Bravo !!! Vous avez atteint 100 Pts !<br>Présentez votre QR Code pour réclamer votre surprise !
     </div>
+
     <button class="logout-btn" onclick="logout()">Changer de compte</button>
   </div>
+
   <script>
     async function loginClient() {
       const phone = document.getElementById('phone-input').value.trim();
@@ -95,12 +113,14 @@
         alert('Veuillez entrer un numéro valide à 8 chiffres.');
         return;
       }
+
       try {
         const res = await fetch(`/api/client/${phone}`);
         if (!res.ok) {
           alert('Client non trouvé.');
           return;
         }
+
         const data = await res.json();
         renderCard(data);
         localStorage.setItem('saved_phone', phone);
@@ -108,14 +128,18 @@
         alert('Erreur lors du chargement des données.');
       }
     }
+
     function renderCard(data) {
       document.getElementById('login-section').style.display = 'none';
       document.getElementById('card-section').style.display = 'flex';
+
       document.getElementById('client-phone').innerText = data.phone;
       document.getElementById('client-name').innerText = data.name;
       document.getElementById('points-count').innerText = `${data.points} Total Points`;
+
       // QR Code generation
       document.getElementById('qr-image').src = `https://quickchart.io/qr?text=${data.phone}&size=180`;
+
       // Activate stamp circles (1 stamp per 10 points)
       const activeStamps = Math.min(10, Math.floor(data.points / 10));
       for (let i = 1; i <= 10; i++) {
@@ -126,6 +150,7 @@
           stamp.classList.remove('active');
         }
       }
+
       // 100 Pts Reward Banner
       const rewardBanner = document.getElementById('reward-banner');
       if (data.points >= 100) {
@@ -133,6 +158,7 @@
       } else {
         rewardBanner.style.display = 'none';
       }
+
       // Add to Google Wallet Link
       const walletLink = document.getElementById('wallet-link');
       if (data.walletUrl) {
@@ -142,12 +168,14 @@
         walletLink.style.display = 'none';
       }
     }
+
     function logout() {
       localStorage.removeItem('saved_phone');
       document.getElementById('card-section').style.display = 'none';
       document.getElementById('login-section').style.display = 'block';
       document.getElementById('phone-input').value = '';
     }
+
     // Auto-login on load
     window.onload = () => {
       const savedPhone = localStorage.getItem('saved_phone');

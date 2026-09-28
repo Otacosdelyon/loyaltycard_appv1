@@ -1,10 +1,17 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>O'Tacos Admin - Fidélité</title>
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O'Tacos Admin</title>
+  
+  <!-- Add O'Tacos logo as favicon -->
+  <link rel="icon" type="image/png" href="/otacoslogo.png">
+</head>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -17,6 +24,7 @@
       align-items: center;
       gap: 25px;
     }
+
     .card-block {
       background: #1e1e1e;
       border-radius: 16px;
@@ -27,18 +35,21 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.4);
       box-sizing: border-box;
     }
+
     h3 {
       color: #ff6600;
       margin-top: 0;
       margin-bottom: 20px;
       font-size: 20px;
     }
+
     .input-row {
       display: flex;
       gap: 15px;
       align-items: center;
       flex-wrap: wrap;
     }
+
     input {
       background: #2a2a2a;
       border: 1px solid #444;
@@ -48,9 +59,11 @@
       font-size: 15px;
       outline: none;
     }
+
     input:focus {
       border-color: #ff6600;
     }
+
     .btn-orange {
       background: #ff6600;
       color: #fff;
@@ -62,9 +75,11 @@
       font-size: 15px;
       transition: background 0.2s;
     }
+
     .btn-orange:hover {
       background: #e65c00;
     }
+
     .btn-dark {
       background: #333;
       color: #fff;
@@ -75,9 +90,11 @@
       cursor: pointer;
       font-size: 15px;
     }
+
     .btn-dark:hover {
       background: #444;
     }
+
     .btn-red {
       background: #e54d4d;
       color: #fff;
@@ -88,14 +105,17 @@
       cursor: pointer;
       font-size: 15px;
     }
+
     .btn-red:hover {
       background: #cc3b3b;
     }
+
     .info-text {
       color: #aaa;
       font-size: 13px;
       margin-top: 10px;
     }
+
     .scanner-box {
       border: 2px dashed #444;
       border-radius: 12px;
@@ -107,6 +127,7 @@
       margin-bottom: 20px;
       background: #181818;
     }
+
     .scanner-btn {
       background: #ffffff;
       color: #000;
@@ -117,11 +138,13 @@
       cursor: pointer;
       margin-bottom: 6px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
+
     th {
       text-align: left;
       color: #ff6600;
@@ -131,15 +154,18 @@
       padding-bottom: 15px;
       border-bottom: 1px solid #333;
     }
+
     td {
       padding: 14px 0;
       border-bottom: 1px solid #262626;
       font-size: 15px;
     }
+
     .action-btns {
       display: flex;
       gap: 8px;
     }
+
     .action-btns button {
       padding: 6px 12px;
       border-radius: 6px;
@@ -148,6 +174,7 @@
   </style>
 </head>
 <body>
+
   <!-- BLOCK 1: ENREGISTRER UN NOUVEAU CLIENT -->
   <div class="card-block">
     <h3>Enregistrer un Nouveau Client (1ère Visite)</h3>
@@ -161,6 +188,7 @@
     </div>
     <p id="reg-msg" style="margin-top: 10px; font-size: 14px; font-weight: bold;"></p>
   </div>
+
   <!-- BLOCK 2: SCANNER QR CODE & GÉRER LES POINTS -->
   <div class="card-block">
     <h3>Scanner QR Code & Gérer les Points</h3>
@@ -169,6 +197,7 @@
       <button class="scanner-btn">Start Scanning</button>
       <a href="#" style="color: #4db8ff; font-size: 13px; text-decoration: underline;">Scan an Image File</a>
     </div>
+
     <div class="input-row">
       <input type="tel" id="scan-phone" maxlength="8" placeholder="Numéro du client (8 chiffres)" style="flex: 1;">
       <button class="btn-orange" onclick="adjustPointsDirect(10)">+10 Pts</button>
@@ -179,6 +208,7 @@
     </div>
     <p id="points-msg" style="margin-top: 10px; font-size: 14px; font-weight: bold;"></p>
   </div>
+
   <!-- BLOCK 3: LISTE DES CLIENTS -->
   <div class="card-block">
     <h3>Liste des Clients</h3>
@@ -198,6 +228,7 @@
       </tbody>
     </table>
   </div>
+
   <script>
     // 1. Fetch client list from /api/clients
     async function loadClients() {
@@ -205,12 +236,15 @@
         const res = await fetch('/api/clients');
         if (!res.ok) throw new Error('Échec du chargement des clients');
         const clients = await res.json();
+
         const tbody = document.getElementById('client-table-body');
         tbody.innerHTML = '';
+
         if (!clients || clients.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" style="color: #777; text-align: center;">Aucun client trouvé dans la base de données.</td></tr>';
           return;
         }
+
         clients.forEach(c => {
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -232,20 +266,24 @@
         console.error('Failed to load clients:', err);
       }
     }
+
     // 2. Register Client
     async function registerClient() {
       const phone = document.getElementById('new-phone').value.trim();
       const name = document.getElementById('new-name').value.trim();
       const msg = document.getElementById('reg-msg');
       msg.innerText = '';
+
       try {
         const res = await fetch('/api/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, name })
         });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Erreur lors de la création');
+
         msg.style.color = '#4caf50';
         msg.innerText = 'Client enregistré avec succès !';
         document.getElementById('new-phone').value = '';
@@ -257,6 +295,7 @@
         msg.innerText = err.message;
       }
     }
+
     // 3. Adjust points directly from top input field
     async function adjustPointsDirect(delta) {
       const phone = document.getElementById('scan-phone').value.trim();
@@ -266,6 +305,7 @@
       }
       await adjustByPhone(phone, delta);
     }
+
     // Redeem 100 Points
     async function redeemReward() {
       const phone = document.getElementById('scan-phone').value.trim();
@@ -275,18 +315,22 @@
       }
       await adjustByPhone(phone, -100);
     }
+
     // 4. API call to update points
     async function adjustByPhone(phone, delta) {
       const msg = document.getElementById('points-msg');
       msg.innerText = '';
+
       try {
         const res = await fetch('/api/points', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, delta })
         });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Échec de mise à jour');
+
         msg.style.color = '#4caf50';
         msg.innerText = `Points mis à jour ! Nouveau solde: ${data.points} Pts`;
         loadClients();
@@ -295,6 +339,7 @@
         msg.innerText = err.message;
       }
     }
+
     // Initial load and poll every 5 seconds
     window.onload = () => {
       loadClients();
