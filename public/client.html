@@ -72,12 +72,21 @@
     .stamp-num { position: absolute; z-index: 2; color: #fff; }
 
     .qr-container { background: #fff; border-radius: 16px; padding: 15px; display: inline-block; margin-top: 5px; }
-    #qrcode img { display: block; margin: 0 auto; }
+    #qrcode img, #qrcode canvas { display: block; margin: 0 auto; }
     .qr-subtext { font-size: 13px; color: #8fa0b5; margin-top: 10px; }
     
     input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2c384a; background: #111722; color: #fff; font-size: 16px; text-align: center; margin-bottom: 10px; }
     button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #ff6600; color: #fff; font-weight: bold; font-size: 16px; cursor: pointer; }
-    .btn-change { background: transparent; border: 1px solid #2c384a; color: #8fa0b5; margin-top: 15px; }
+    
+    .btn-download {
+      background-color: #2c384a;
+      color: #ffffff;
+      margin-top: 15px;
+      transition: background-color 0.2s ease;
+    }
+    .btn-download:hover { background-color: #3b4b63; }
+
+    .btn-change { background: transparent; border: 1px solid #2c384a; color: #8fa0b5; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -111,37 +120,74 @@
       </div>
       <div class="qr-subtext">Scannez ce QR Code à la caisse</div>
 
+      <!-- 💾 SAVE QR BUTTON -->
+      <button class="btn-download" onclick="downloadQRCode()">💾 Sauvegarder mon QR Code</button>
+
       <button class="btn-change" onclick="resetCard()">Changer de compte</button>
     </div>
   </div>
 
   <script>
-    async function loadCard() {
-      const phone = document.getElementById('phoneInput').value;
-      if (phone.length !== 8) return alert('Veuillez entrer un numéro à 8 chiffres.');
+    // AUTO-LOGIN ON PAGE LOAD IF PHONE IS SAVED IN LOCALSTORAGE
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedPhone = localStorage.getItem('otacos_phone');
+      if (savedPhone && savedPhone.length === 8) {
+        document.getElementById('phoneInput').value = savedPhone;
+        loadCard(true); // Silent load on page open
+      }
+    });
 
-      const res = await fetch(`/api/clients/${phone}`);
-      if (!res.ok) return alert('Client non trouvé.');
+    async function loadCard(isAutoLoad = false) {
+      const phoneInput = document.getElementById('phoneInput');
+      const phone = phoneInput.value.trim();
 
-      const client = await res.json();
-      
-      document.getElementById('loginForm').style.display = 'none';
-      document.getElementById('cardContent').style.display = 'block';
-
-      document.getElementById('displayPhone').innerText = client.phone;
-      document.getElementById('displayName').innerText = client.name || 'Client O\'Tacos';
-      document.getElementById('displayPoints').innerText = client.points;
-
-      // Show reward message if points hit 100
-      const banner = document.getElementById('rewardBanner');
-      if (client.points >= 100) {
-        banner.style.display = 'block';
-      } else {
-        banner.style.display = 'none';
+      if (phone.length !== 8) {
+        if (!isAutoLoad) alert('Veuillez entrer un numéro à 8 chiffres.');
+        return;
       }
 
-      renderStamps(client.points);
-      generateQRCode(client.phone);
+      try {
+        const res = await fetch(`/api/clients/${phone}`);
+        
+        // Handle non-JSON response gracefully
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          if (!isAutoLoad) alert('Impossible de se connecter au serveur. Veuillez réessayer.');
+          return;
+        }
+
+        if (!res.ok) {
+          const errData = await res.json();
+          if (!isAutoLoad) alert(errData.error || 'Client non trouvé.');
+          return;
+        }
+
+        const client = await res.json();
+        
+        // Save phone locally for instant future access
+        localStorage.setItem('otacos_phone', client.phone);
+
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('cardContent').style.display = 'block';
+
+        document.getElementById('displayPhone').innerText = client.phone;
+        document.getElementById('displayName').innerText = client.name || 'Client O\'Tacos';
+        document.getElementById('displayPoints').innerText = client.points;
+
+        // Show reward banner if points reach 100
+        const banner = document.getElementById('rewardBanner');
+        if (client.points >= 100) {
+          banner.style.display = 'block';
+        } else {
+          banner.style.display = 'none';
+        }
+
+        renderStamps(client.points);
+        generateQRCode(client.phone);
+
+      } catch (err) {
+        if (!isAutoLoad) alert('Erreur de connexion au serveur.');
+      }
     }
 
     function renderStamps(points) {
@@ -171,7 +217,36 @@
       });
     }
 
+    // FUNCTION TO DOWNLOAD / SAVE QR CODE IMAGE
+    function downloadQRCode() {
+      const qrContainer = document.getElementById('qrcode');
+      let imageSrc = '';
+
+      const canvas = qrContainer.querySelector('canvas');
+      const img = qrContainer.querySelector('img');
+
+      if (canvas) {
+        imageSrc = canvas.toDataURL('image/png');
+      } else if (img && img.src) {
+        imageSrc = img.src;
+      }
+
+      if (!imageSrc) {
+        alert('Veuillez d\'abord afficher votre QR Code.');
+        return;
+      }
+
+      const phone = localStorage.getItem('otacos_phone') || 'carte';
+      const link = document.createElement('a');
+      link.href = imageSrc;
+      link.download = `OTacos_QR_${phone}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
     function resetCard() {
+      localStorage.removeItem('otacos_phone');
       document.getElementById('cardContent').style.display = 'none';
       document.getElementById('loginForm').style.display = 'block';
       document.getElementById('phoneInput').value = '';
