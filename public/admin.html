@@ -1,305 +1,212 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>O'Tacos Admin - Fidélité</title>
+  <title>O'TACOS - Panneau d'Administration</title>
+  <link rel="shortcut icon" href="otacoslogo.png" type="image/png">
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #121212;
-      color: #ffffff;
-      margin: 0;
-      padding: 30px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 25px;
-    }
-    .card-block {
-      background: #1e1e1e;
-      border-radius: 16px;
-      padding: 25px 30px;
-      width: 100%;
-      max-width: 850px;
-      border: 1px solid #2d2d2d;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-      box-sizing: border-box;
-    }
-    h3 {
-      color: #ff6600;
-      margin-top: 0;
-      margin-bottom: 20px;
-      font-size: 20px;
-    }
-    .input-row {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    input {
-      background: #2a2a2a;
-      border: 1px solid #444;
-      color: #fff;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 15px;
-      outline: none;
-    }
-    input:focus {
-      border-color: #ff6600;
-    }
-    .btn-orange {
-      background: #ff6600;
-      color: #fff;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 15px;
-      transition: background 0.2s;
-    }
-    .btn-orange:hover {
-      background: #e65c00;
-    }
-    .btn-dark {
-      background: #333;
-      color: #fff;
-      border: 1px solid #444;
-      padding: 12px 18px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 15px;
-    }
-    .btn-dark:hover {
-      background: #444;
-    }
-    .btn-red {
-      background: #e54d4d;
-      color: #fff;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 15px;
-    }
-    .btn-red:hover {
-      background: #cc3b3b;
-    }
-    .info-text {
-      color: #aaa;
-      font-size: 13px;
-      margin-top: 10px;
-    }
-    .scanner-box {
-      border: 2px dashed #444;
-      border-radius: 12px;
-      height: 180px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 20px;
-      background: #181818;
-    }
-    .scanner-btn {
-      background: #ffffff;
-      color: #000;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 4px;
-      font-size: 13px;
-      cursor: pointer;
-      margin-bottom: 6px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th {
-      text-align: left;
-      color: #ff6600;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #333;
-    }
-    td {
-      padding: 14px 0;
-      border-bottom: 1px solid #262626;
-      font-size: 15px;
-    }
-    .action-btns {
-      display: flex;
-      gap: 8px;
-    }
-    .action-btns button {
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #121212; color: #fff; margin: 0; padding: 20px; }
+    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e5a93c; padding-bottom: 15px; margin-bottom: 20px; }
+    .header-left { display: flex; align-items: center; }
+    .header-left img { height: 50px; margin-right: 15px; }
+    .role-select { background: #222; color: #e5a93c; border: 1px solid #e5a93c; padding: 8px; border-radius: 6px; font-weight: bold; }
+    .block { background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+    .block h3 { color: #e5a93c; margin-top: 0; }
+    input, select { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #2b2b2b; color: #fff; margin-bottom: 10px; width: 100%; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    button { padding: 10px 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+    .btn-add { background: #28a745; color: #fff; }
+    .btn-remove { background: #dc3545; color: #fff; }
+    .btn-convert { background: #e5a93c; color: #000; width: 100%; font-size: 16px; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+    th { background: #2a2a2a; color: #e5a93c; }
   </style>
 </head>
 <body>
-  <!-- BLOCK 1: ENREGISTRER UN NOUVEAU CLIENT -->
-  <div class="card-block">
-    <h3>Enregistrer un Nouveau Client (1ère Visite)</h3>
-    <div class="input-row">
-      <input type="tel" id="new-phone" maxlength="8" placeholder="77111112" style="flex: 1;">
-      <input type="text" id="new-name" placeholder="Nom complet (ex: Ahmed Ali Uma)" style="flex: 2;">
-      <button class="btn-orange" onclick="registerClient()">Enregistrer & Générer QR</button>
+
+  <div class="header">
+    <div class="header-left">
+      <img src="otacoslogo.png" alt="O'Tacos Logo">
+      <h2>Espace Admin</h2>
     </div>
-    <div class="info-text">
-      ⚠️ Numéro à 8 chiffres uniquement | Nom à 3 mots minimum.
+    <div>
+      <label>Rôle actuel : </label>
+      <select id="roleSelect" class="role-select">
+        <option value="supervisor">Supervisor</option>
+        <option value="manager">Manager</option>
+      </select>
     </div>
-    <p id="reg-msg" style="margin-top: 10px; font-size: 14px; font-weight: bold;"></p>
   </div>
-  <!-- BLOCK 2: SCANNER QR CODE & GÉRER LES POINTS -->
-  <div class="card-block">
-    <h3>Scanner QR Code & Gérer les Points</h3>
+
+  <!-- Block 1 -->
+  <div class="block">
+    <h3>1. Enregistrer un Nouveau Client (1ère Visite!)</h3>
+    <input type="text" id="newPhone" maxlength="8" placeholder="Numéro de téléphone (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+    <button class="btn-add" onclick="registerClient()">Enregistrer le Client</button>
+  </div>
+
+  <!-- Block 2 -->
+  <div class="block">
+    <h3>2. Scanner QR Code & Gérer les Points</h3>
+    <input type="text" id="managePhone" maxlength="8" placeholder="Rechercher par Numéro (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+    <button onclick="searchClient()" style="background:#007bff; color:#fff;">Charger Client</button>
     
-    <div class="scanner-box">
-      <button class="scanner-btn">Start Scanning</button>
-      <a href="#" style="color: #4db8ff; font-size: 13px; text-decoration: underline;">Scan an Image File</a>
+    <div id="clientDetails" style="display:none; margin-top: 15px;">
+      <p><strong>Points Actuels : </strong><span id="currentPts" style="color:#e5a93c; font-size: 20px;">0</span> Pts</p>
+      
+      <h4>Ajouter / Retirer des Points :</h4>
+      <div class="btn-group">
+        <button class="btn-add" onclick="addPts(10)">Tacos (+10 Pts)</button>
+        <button class="btn-add" onclick="addPts(5)">Burger/Panini (+5 Pts)</button>
+        <button class="btn-add" onclick="addPts(10)">Breakfast (+10 Pts)</button>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-remove" onclick="removePts(10)">Retirer (-10 Pts)</button>
+        <button class="btn-remove" onclick="removePts(5)">Retirer (-5 Pts)</button>
+      </div>
+
+      <button class="btn-convert" onclick="redeemPoints()">Convertir mes points</button>
     </div>
-    <div class="input-row">
-      <input type="tel" id="scan-phone" maxlength="8" placeholder="Numéro du client (8 chiffres)" style="flex: 1;">
-      <button class="btn-orange" onclick="adjustPointsDirect(10)">+10 Pts</button>
-      <button class="btn-orange" onclick="adjustPointsDirect(5)">+5 Pts</button>
-      <button class="btn-dark" onclick="adjustPointsDirect(-5)">-5 Pts</button>
-      <button class="btn-dark" onclick="adjustPointsDirect(-10)">-10 Pts</button>
-      <button class="btn-red" onclick="redeemReward()">Redeem 100 Pts!</button>
-    </div>
-    <p id="points-msg" style="margin-top: 10px; font-size: 14px; font-weight: bold;"></p>
   </div>
-  <!-- BLOCK 3: LISTE DES CLIENTS -->
-  <div class="card-block">
-    <h3>Liste des Clients</h3>
+
+  <!-- Block 3 -->
+  <div class="block">
+    <h3>3. Liste des Clients</h3>
+    <button onclick="loadClientsList()" style="background:#6c757d; color:#fff;">Rafraîchir la Liste</button>
     <table>
       <thead>
         <tr>
           <th>Téléphone</th>
-          <th>Nom (3 Mots)</th>
           <th>Points</th>
-          <th>Actions</th>
+          <th>Date de Création</th>
         </tr>
       </thead>
-      <tbody id="client-table-body">
-        <tr>
-          <td colspan="4" style="color: #777; text-align: center;">Chargement des données...</td>
-        </tr>
-      </tbody>
+      <tbody id="clientsTableBody"></tbody>
     </table>
   </div>
+
   <script>
-    // 1. Fetch client list from /api/clients
-    async function loadClients() {
-      try {
-        const res = await fetch('/api/clients');
-        if (!res.ok) throw new Error('Échec du chargement des clients');
-        const clients = await res.json();
-        const tbody = document.getElementById('client-table-body');
-        tbody.innerHTML = '';
-        if (!clients || clients.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" style="color: #777; text-align: center;">Aucun client trouvé dans la base de données.</td></tr>';
-          return;
-        }
-        clients.forEach(c => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td><strong>${c.phone}</strong></td>
-            <td>${c.name}</td>
-            <td style="color: #ff6600; font-weight: bold;">${c.points} Pts</td>
-            <td>
-              <div class="action-btns">
-                <button class="btn-orange" onclick="adjustByPhone('${c.phone}', 10)">+10</button>
-                <button class="btn-orange" onclick="adjustByPhone('${c.phone}', 5)">+5</button>
-                <button class="btn-dark" onclick="adjustByPhone('${c.phone}', -5)">-5</button>
-                <button class="btn-dark" onclick="adjustByPhone('${c.phone}', -10)">-10</button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-      } catch (err) {
-        console.error('Failed to load clients:', err);
-      }
+    let activeClient = null;
+
+    function getRole() {
+      return document.getElementById('roleSelect').value;
     }
-    // 2. Register Client
+
     async function registerClient() {
-      const phone = document.getElementById('new-phone').value.trim();
-      const name = document.getElementById('new-name').value.trim();
-      const msg = document.getElementById('reg-msg');
-      msg.innerText = '';
-      try {
-        const res = await fetch('/api/clients', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone, name })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erreur lors de la création');
-        msg.style.color = '#4caf50';
-        msg.innerText = 'Client enregistré avec succès !';
-        document.getElementById('new-phone').value = '';
-        document.getElementById('new-name').value = '';
-        
-        loadClients();
-      } catch (err) {
-        msg.style.color = '#ff4d4d';
-        msg.innerText = err.message;
-      }
+      const phone = document.getElementById('newPhone').value;
+      if (phone.length !== 8) return alert('Le numéro doit comporter exactement 8 chiffres.');
+
+      const res = await fetch('/api/clients/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+
+      alert('Client enregistré avec succès!');
+      document.getElementById('newPhone').value = '';
+      loadClientsList();
     }
-    // 3. Adjust points directly from top input field
-    async function adjustPointsDirect(delta) {
-      const phone = document.getElementById('scan-phone').value.trim();
-      if (!phone) {
-        alert('Veuillez entrer un numéro de téléphone.');
+
+    async function searchClient() {
+      const phone = document.getElementById('managePhone').value;
+      if (phone.length !== 8) return alert('Entrez un numéro à 8 chiffres.');
+
+      const res = await fetch(`/api/clients/${phone}`);
+      if (!res.ok) {
+        alert('Client introuvable.');
         return;
       }
-      await adjustByPhone(phone, delta);
+
+      activeClient = await res.json();
+      document.getElementById('clientDetails').style.display = 'block';
+      document.getElementById('currentPts').innerText = activeClient.points;
     }
-    // Redeem 100 Points
-    async function redeemReward() {
-      const phone = document.getElementById('scan-phone').value.trim();
-      if (!phone) {
-        alert('Veuillez entrer un numéro de téléphone.');
-        return;
-      }
-      await adjustByPhone(phone, -100);
-    }
-    // 4. API call to update points
-    async function adjustByPhone(phone, delta) {
-      const msg = document.getElementById('points-msg');
-      msg.innerText = '';
-      try {
-        const res = await fetch('/api/points', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone, delta })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Échec de mise à jour');
-        msg.style.color = '#4caf50';
-        msg.innerText = `Points mis à jour ! Nouveau solde: ${data.points} Pts`;
-        loadClients();
-      } catch (err) {
-        msg.style.color = '#ff4d4d';
-        msg.innerText = err.message;
+
+    async function addPts(pts) {
+      if (!activeClient) return;
+      const res = await fetch('/api/clients/add-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: activeClient.phone, pointsToAdd: pts })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        activeClient = data.client;
+        document.getElementById('currentPts').innerText = activeClient.points;
+        loadClientsList();
       }
     }
-    // Initial load and poll every 5 seconds
-    window.onload = () => {
-      loadClients();
-      setInterval(loadClients, 5000);
-    };
+
+    async function removePts(pts) {
+      if (getRole() !== 'manager') {
+        return alert('Seul le Manager est autorisé à retirer des points.');
+      }
+      const pin = prompt('Entrez le code PIN Manager (4 chiffres) :');
+      if (!pin) return;
+
+      const res = await fetch('/api/clients/remove-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: activeClient.phone, pointsToRemove: pts, pin })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+
+      activeClient = data.client;
+      document.getElementById('currentPts').innerText = activeClient.points;
+      loadClientsList();
+    }
+
+    async function redeemPoints() {
+      if (getRole() !== 'manager') {
+        return alert('Seul le Manager est autorisé à effectuer les conversions.');
+      }
+
+      if (activeClient.points < 100) {
+        const missing = 100 - activeClient.points;
+        return alert(`Désolé, vous avez ${missing} points manquants.`);
+      }
+
+      const pin = prompt('Entrez le code PIN Manager (4 chiffres) :');
+      if (!pin) return;
+
+      const res = await fetch('/api/clients/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: activeClient.phone, pin })
+      });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error);
+
+      alert(data.message);
+      activeClient = data.client;
+      document.getElementById('currentPts').innerText = activeClient.points;
+      loadClientsList();
+    }
+
+    async function loadClientsList() {
+      const res = await fetch('/api/clients');
+      const clients = await res.json();
+      const tbody = document.getElementById('clientsTableBody');
+      tbody.innerHTML = '';
+      clients.forEach(c => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${c.phone}</td>
+            <td>${c.points}</td>
+            <td>${new Date(c.created_at).toLocaleString()}</td>
+          </tr>
+        `;
+      });
+    }
+
+    loadClientsList();
   </script>
 </body>
 </html>

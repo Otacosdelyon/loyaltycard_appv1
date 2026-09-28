@@ -1,161 +1,84 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>O'Tacos Loyalty</title>
+  <title>O'TACOS - Ma Carte de Fidélité</title>
+  <link rel="shortcut icon" href="otacoslogo.png" type="image/png">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #0f172a; color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-    
-    .header-title { color: #f97316; font-size: 28px; font-weight: 900; letter-spacing: 1.5px; margin-bottom: 20px; text-transform: uppercase; }
-    
-    .card { background-color: #1e293b; width: 100%; max-width: 380px; border-radius: 20px; padding: 25px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; text-align: center; }
-    
-    .phone-badge { background-color: #334155; color: #cbd5e1; padding: 4px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
-    .client-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; color: #f8fafc; }
-    .points-text { font-size: 18px; font-weight: 800; color: #ea580c; margin-bottom: 20px; }
-    
-    /* 10 Stamp Circles Grid */
-    .stamps-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; margin-bottom: 25px; }
-    .stamp { aspect-ratio: 1; border-radius: 50%; background-color: #f97316; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; box-shadow: 0 0 10px rgba(249, 115, 22, 0.4); opacity: 0.25; transition: all 0.3s ease; }
-    .stamp.active { opacity: 1; transform: scale(1.05); }
-    
-    /* QR Code Container */
-    .qr-container { background-color: #ffffff; padding: 15px; border-radius: 16px; margin-bottom: 8px; }
-    .qr-container img { width: 180px; height: 180px; display: block; }
-    .scan-text { font-size: 12px; color: #94a3b8; margin-bottom: 15px; }
-    
-    /* Google Wallet Badge */
-    .wallet-container { margin-bottom: 20px; }
-    .wallet-btn img { height: 46px; transition: transform 0.2s ease; }
-    .wallet-btn img:hover { transform: scale(1.03); }
-    
-    /* Reward Banner */
-    .reward-banner { background-color: #ea580c; color: #ffffff; padding: 14px 15px; border-radius: 12px; font-size: 14px; font-weight: 700; width: 100%; margin-bottom: 15px; display: none; line-height: 1.4; }
-    
-    .logout-btn { background-color: #1e293b; border: 1px solid #334155; color: #cbd5e1; width: 100%; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: background 0.2s ease; }
-    .logout-btn:hover { background-color: #334155; }
-    
-    /* Login Screen */
-    .login-box { background-color: #1e293b; width: 100%; max-width: 380px; border-radius: 20px; padding: 30px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
-    .input-field { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #334155; background-color: #0f172a; color: #ffffff; font-size: 16px; text-align: center; margin: 15px 0; outline: none; }
-    .submit-btn { width: 100%; background-color: #ea580c; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #121212; color: #fff; margin: 0; padding: 20px; text-align: center; }
+    .header { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 20px; }
+    .header img { height: 50px; margin-right: 15px; }
+    .card { background: #1e1e1e; max-width: 450px; margin: 0 auto; border-radius: 16px; padding: 25px; border: 2px solid #e5a93c; }
+    .input-group { margin-bottom: 20px; }
+    input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; font-size: 18px; text-align: center; background: #2b2b2b; color: #fff; }
+    button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #e5a93c; color: #000; font-weight: bold; font-size: 16px; cursor: pointer; }
+    .stamps-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin: 25px 0; }
+    .stamp { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #e5a93c; position: relative; margin: 0 auto; background: #2a2a2a; overflow: hidden; }
+    .stamp-fill { position: absolute; bottom: 0; left: 0; right: 0; background: #e5a93c; transition: height 0.3s ease; }
+    .stamp-number { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; z-index: 2; text-shadow: 1px 1px 2px #000; }
+    .pts-summary { font-size: 20px; font-weight: bold; color: #e5a93c; }
   </style>
 </head>
 <body>
-  <h1 class="header-title">O'TACOS LOYALTY</h1>
-  <!-- Login Form -->
-  <div id="login-section" class="login-box">
-    <h2 style="margin-bottom: 10px;">Espace Client</h2>
-    <p style="color: #94a3b8; font-size: 14px;">Entrez votre numéro de téléphone (8 chiffres)</p>
-    <input type="tel" id="phone-input" class="input-field" placeholder="Ex: 77111113" maxlength="8">
-    <button onclick="loginClient()" class="submit-btn">Accéder à ma carte</button>
+
+  <div class="header">
+    <img src="otacoslogo.png" alt="O'Tacos Logo">
+    <h2>Carte de Fidélité</h2>
   </div>
-  <!-- Client Loyalty Card -->
-  <div id="card-section" class="card" style="display: none;">
-    <div id="client-phone" class="phone-badge">77111113</div>
-    <div id="client-name" class="client-name">Nom du Client</div>
-    <div id="points-count" class="points-text">0 Total Points</div>
-    <!-- 10 Stamps -->
-    <div class="stamps-grid">
-      <div class="stamp" id="stamp-1">1</div>
-      <div class="stamp" id="stamp-2">2</div>
-      <div class="stamp" id="stamp-3">3</div>
-      <div class="stamp" id="stamp-4">4</div>
-      <div class="stamp" id="stamp-5">5</div>
-      <div class="stamp" id="stamp-6">6</div>
-      <div class="stamp" id="stamp-7">7</div>
-      <div class="stamp" id="stamp-8">8</div>
-      <div class="stamp" id="stamp-9">9</div>
-      <div class="stamp" id="stamp-10">10</div>
+
+  <div class="card">
+    <div class="input-group">
+      <input type="text" id="phoneInput" maxlength="8" placeholder="Entrez votre numéro (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+      <button onclick="loadClientCard()" style="margin-top: 10px;">Consulter mes points</button>
     </div>
-    <!-- QR Code -->
-    <div class="qr-container">
-      <img id="qr-image" src="" alt="QR Code">
+
+    <div id="cardContent" style="display:none;">
+      <div class="pts-summary" id="pointsDisplay">0 Pts</div>
+      <div class="stamps-grid" id="stampsGrid"></div>
     </div>
-    <div class="scan-text">Scannez ce QR Code à la caisse</div>
-    <!-- Google Wallet Button Directly Under QR Code -->
-    <div class="wallet-container">
-      <a id="wallet-link" class="wallet-btn" href="#" target="_blank" style="display: none;">
-        <img src="https://pay.google.com/gp/v/static/images/badges/fr_FR_add_to_google_wallet_add-to-wallet-badge.svg" alt="Ajouter à Google Wallet">
-      </a>
-    </div>
-    <!-- 100 Pts Banner -->
-    <div id="reward-banner" class="reward-banner">
-      🎉 Bravo !!! Vous avez atteint 100 Pts !<br>Présentez votre QR Code pour réclamer votre surprise !
-    </div>
-    <button class="logout-btn" onclick="logout()">Changer de compte</button>
   </div>
+
   <script>
-    async function loginClient() {
-      const phone = document.getElementById('phone-input').value.trim();
-      if (!/^\d{8}$/.test(phone)) {
+    async function loadClientCard() {
+      const phone = document.getElementById('phoneInput').value;
+      if (phone.length !== 8) {
         alert('Veuillez entrer un numéro valide à 8 chiffres.');
         return;
       }
-      try {
-        const res = await fetch(`/api/client/${phone}`);
-        if (!res.ok) {
-          alert('Client non trouvé.');
-          return;
-        }
-        const data = await res.json();
-        renderCard(data);
-        localStorage.setItem('saved_phone', phone);
-      } catch (err) {
-        alert('Erreur lors du chargement des données.');
+
+      const res = await fetch(`/api/clients/${phone}`);
+      if (!res.ok) {
+        alert('Client non trouvé.');
+        return;
       }
+
+      const data = await res.json();
+      renderStamps(data.points);
     }
-    function renderCard(data) {
-      document.getElementById('login-section').style.display = 'none';
-      document.getElementById('card-section').style.display = 'flex';
-      document.getElementById('client-phone').innerText = data.phone;
-      document.getElementById('client-name').innerText = data.name;
-      document.getElementById('points-count').innerText = `${data.points} Total Points`;
-      // QR Code generation
-      document.getElementById('qr-image').src = `https://quickchart.io/qr?text=${data.phone}&size=180`;
-      // Activate stamp circles (1 stamp per 10 points)
-      const activeStamps = Math.min(10, Math.floor(data.points / 10));
+
+    function renderStamps(points) {
+      document.getElementById('cardContent').style.display = 'block';
+      document.getElementById('pointsDisplay').innerText = `${points} Points`;
+
+      const grid = document.getElementById('stampsGrid');
+      grid.innerHTML = '';
+
       for (let i = 1; i <= 10; i++) {
-        const stamp = document.getElementById(`stamp-${i}`);
-        if (i <= activeStamps) {
-          stamp.classList.add('active');
-        } else {
-          stamp.classList.remove('active');
-        }
-      }
-      // 100 Pts Reward Banner
-      const rewardBanner = document.getElementById('reward-banner');
-      if (data.points >= 100) {
-        rewardBanner.style.display = 'block';
-      } else {
-        rewardBanner.style.display = 'none';
-      }
-      // Add to Google Wallet Link
-      const walletLink = document.getElementById('wallet-link');
-      if (data.walletUrl) {
-        walletLink.href = data.walletUrl;
-        walletLink.style.display = 'inline-block';
-      } else {
-        walletLink.style.display = 'none';
+        // Points assigned to this stamp (10 points per stamp)
+        const stampPoints = Math.max(0, Math.min(10, points - (i - 1) * 10));
+        const fillPercentage = (stampPoints / 10) * 100;
+
+        const stampEl = document.createElement('div');
+        stampEl.className = 'stamp';
+        stampEl.innerHTML = `
+          <div class="stamp-fill" style="height: ${fillPercentage}%"></div>
+          <div class="stamp-number">${i}</div>
+        `;
+        grid.appendChild(stampEl);
       }
     }
-    function logout() {
-      localStorage.removeItem('saved_phone');
-      document.getElementById('card-section').style.display = 'none';
-      document.getElementById('login-section').style.display = 'block';
-      document.getElementById('phone-input').value = '';
-    }
-    // Auto-login on load
-    window.onload = () => {
-      const savedPhone = localStorage.getItem('saved_phone');
-      if (savedPhone) {
-        document.getElementById('phone-input').value = savedPhone;
-        loginClient();
-      }
-    };
   </script>
 </body>
 </html>

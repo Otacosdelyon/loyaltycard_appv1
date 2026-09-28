@@ -1,241 +1,121 @@
 const express = require('express');
-const path = require('path');
 const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
-
+const path = require('path');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Configuration
-const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || '3388000000023206123';
-const CLASS_ID = `${ISSUER_ID}.otacos_loyalty_card`;
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Neon PostgreSQL Database Connection
+// Configure Neon PostgreSQL Connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// Admin Password Config (Change default password here or via ENV)
+const MANAGER_PIN = process.env.MANAGER_PIN || '1234';
 
-// Load Google Service Account Credentials
-function getServiceAccountCredentials() {
-  if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
-    try {
-      const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
-      if (creds.private_key) {
-        creds.private_key = creds.private_key.replace(/\\n/g, '\n');
-      }
-      return creds;
-    } catch (err) {
-      console.error('Error parsing GOOGLE_SERVICE_ACCOUNT_KEY:', err);
-      return null;
+// Helper to validate 8-digit phone numbers
+const isValidPhone = (phone) => /^\d{8}$/.test(phone);
+
+// API 1: Register New Client
+app.post('/api/clients/register', async (req, res) => {
+  const { phone } = req.body;
+  if (!isValidPhone(phone)) return res.status(400).json({ error: 'Le numéro doit comporter 8 chiffres.' });
+
+  try {
+    const existing = await pool.query('SELECT phone FROM clients WHERE phone = $1', [phone]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Client déjà existant.' });
     }
-  }
-  try {
-    return require(path.join(__dirname, 'service-account.json'));
+    const result = await pool.query('INSERT INTO clients (phone, points) VALUES ($1, 0) RETURNING *', [phone]);
+    res.json({ success: true, client: result.rows[0] });
   } catch (err) {
-    console.error('service-account.json file not found locally.');
-    return null;
-  }
-}
-
-// Generate Google Wallet JWT Save Link with Class & Object Definitions
-function generateGoogleWalletUrl(client) {
-  const credentials = getServiceAccountCredentials();
-  if (!credentials) return null;
-
-  const objectId = `${ISSUER_ID}.${client.phone}`;
-  const baseUrl = process.env.RENDER_EXTERNAL_HOSTNAME 
-    ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` 
-    : 'http://localhost:3000';
-
-  const claims = {
-    iss: credentials.client_email,
-    aud: 'google',
-    origins: [baseUrl],
-    typ: 'savetowallet',
-    payload: {
-      loyaltyClasses: [
-        {
-          id: CLASS_ID,
-          issuerName: "O'Tacos de Lyon",
-          programName: "O'Tacos Loyalty",
-          reviewStatus: 'UNDER_REVIEW',
-          hexBackgroundColor: '#1e293b',
-          programLogo: {
-            sourceUri: {
-              uri: 'https://storage.googleapis.com/wallet-assets/otacos_logo.png'
-            }
-          }
-        }
-      ],
-      loyaltyObjects: [
-        {
-          id: objectId,
-          classId: CLASS_ID,
-          state: 'ACTIVE',
-          accountName: client.name,
-          accountId: client.phone,
-          barcode: {
-            type: 'QR_CODE',
-            value: client.phone,
-            alternateText: client.phone
-          },
-          loyaltyPoints: {
-            label: 'Points',
-            balance: { string: client.points.toString() }
-          },
-          textModulesData: [
-            {
-              header: 'Numéro Client',
-              body: client.phone,
-              id: 'phone_module'
-            }
-          ]
-        }
-      ]
-    }
-  };
-
-  try {
-    const token = jwt.sign(claims, credentials.private_key, { algorithm: 'RS256' });
-    return `https://pay.google.com/gp/v/save/${token}`;
-  } catch (err) {
-    console.error('Failed to sign Google Wallet JWT:', err);
-    return null;
-  }
-}
-
-// ================= CLEAN UI ROUTES =================
-
-app.get('/client', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'client.html'));
-});
-
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// ================= DATABASE HEALTH CHECK =================
-
-app.get('/api/db-test', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT NOW() AS current_time, current_database() AS db_name;');
-    res.json({
-      status: 'Connected',
-      database: result.rows[0].db_name,
-      time: result.rows[0].current_time
-    });
-  } catch (err) {
-    console.error('Database connection error:', err);
-    res.status(500).json({
-      status: 'Disconnected',
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// ================= DATABASE API ROUTES =================
+// API 2: Get Client Details
+app.get('/api/clients/:phone', async (req, res) => {
+  const { phone } = req.params;
+  try {
+    const result = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Client non trouvé.' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// 1. Get All Clients (For Admin Table from Neon DB)
+// API 3: Get All Clients List
 app.get('/api/clients', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM clients ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {
-    console.error('Database query error:', err);
-    res.status(500).json({ error: 'Database fetch failed' });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// 2. Get Single Client (For Client Portal from Neon DB)
-app.get('/api/client/:phone', async (req, res) => {
-  const { phone } = req.params;
-
-  if (!/^\d{8}$/.test(phone)) {
-    return res.status(400).json({ error: 'Phone number must be strictly 8 digits.' });
-  }
+// API 4: Add Points (Supervisor & Manager)
+app.post('/api/clients/add-points', async (req, res) => {
+  const { phone, pointsToAdd } = req.body;
+  if (!isValidPhone(phone)) return res.status(400).json({ error: 'Numéro invalide.' });
 
   try {
-    const result = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Client not found.' });
-    }
-
-    const client = result.rows[0];
-    const walletUrl = generateGoogleWalletUrl(client);
-    res.json({ ...client, walletUrl });
-  } catch (err) {
-    console.error('Database query error:', err);
-    res.status(500).json({ error: 'Database lookup failed' });
-  }
-});
-
-// 3. Register New Client in Neon DB
-app.post('/api/clients', async (req, res) => {
-  const { phone, name } = req.body;
-
-  if (!phone || !/^\d{8}$/.test(phone.trim())) {
-    return res.status(400).json({ error: 'Phone number must be strictly 8 digits.' });
-  }
-
-  const words = name ? name.trim().split(/\s+/) : [];
-  if (words.length !== 3) {
-    return res.status(400).json({ error: 'Client name must contain exactly 3 words.' });
-  }
-
-  try {
-    const checkUser = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone.trim()]);
-    if (checkUser.rows.length > 0) {
-      return res.status(400).json({ error: 'A client with this phone number already exists.' });
-    }
-
-    const insertResult = await pool.query(
-      'INSERT INTO clients (phone, name, points) VALUES ($1, $2, $3) RETURNING *',
-      [phone.trim(), name.trim(), 0]
+    const result = await pool.query(
+      'UPDATE clients SET points = points + $1 WHERE phone = $2 RETURNING *',
+      [pointsToAdd, phone]
     );
-
-    const newClient = insertResult.rows[0];
-    const walletUrl = generateGoogleWalletUrl(newClient);
-    res.status(201).json({ ...newClient, walletUrl });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Client introuvable.' });
+    res.json({ success: true, client: result.rows[0] });
   } catch (err) {
-    console.error('Database insert error:', err);
-    res.status(500).json({ error: 'Failed to create client in database' });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// 4. Update Points in Neon DB (Bounded 0-100)
-app.post('/api/points', async (req, res) => {
-  const { phone, delta } = req.body;
+// API 5: Remove Points (Manager Only + PIN protected)
+app.post('/api/clients/remove-points', async (req, res) => {
+  const { phone, pointsToRemove, pin } = req.body;
+  if (pin !== MANAGER_PIN) return res.status(403).json({ error: 'Code PIN Manager incorrect.' });
+  if (!isValidPhone(phone)) return res.status(400).json({ error: 'Numéro invalide.' });
 
   try {
-    const userResult = await pool.query('SELECT * FROM clients WHERE phone = $1', [phone]);
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Client not found.' });
-    }
-
-    const client = userResult.rows[0];
-    let updatedPoints = client.points + parseInt(delta, 10);
-    if (updatedPoints < 0) updatedPoints = 0;
-    if (updatedPoints > 100) updatedPoints = 100;
-
-    const updateResult = await pool.query(
-      'UPDATE clients SET points = $1 WHERE phone = $2 RETURNING *',
-      [updatedPoints, phone]
+    const result = await pool.query(
+      'UPDATE clients SET points = GREATEST(0, points - $1) WHERE phone = $2 RETURNING *',
+      [pointsToRemove, phone]
     );
-
-    const updatedClient = updateResult.rows[0];
-    const walletUrl = generateGoogleWalletUrl(updatedClient);
-
-    res.json({ success: true, points: updatedClient.points, walletUrl });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Client introuvable.' });
+    res.json({ success: true, client: result.rows[0] });
   } catch (err) {
-    console.error('Database update error:', err);
-    res.status(500).json({ error: 'Failed to update points in database' });
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`O'Tacos Loyalty Server running on port ${PORT}`);
+// API 6: Redeem Reward (Convert Points - Manager Only + PIN)
+app.post('/api/clients/redeem', async (req, res) => {
+  const { phone, pin } = req.body;
+  if (pin !== MANAGER_PIN) return res.status(403).json({ error: 'Code PIN Manager incorrect.' });
+
+  try {
+    const clientRes = await pool.query('SELECT points FROM clients WHERE phone = $1', [phone]);
+    if (clientRes.rows.length === 0) return res.status(404).json({ error: 'Client non trouvé.' });
+
+    const currentPoints = clientRes.rows[0].points;
+    if (currentPoints < 100) {
+      const missing = 100 - currentPoints;
+      return res.status(400).json({ error: `Désolé, il vous manque ${missing} points.` });
+    }
+
+    const updated = await pool.query(
+      'UPDATE clients SET points = points - 100 WHERE phone = $1 RETURNING *',
+      [phone]
+    );
+    res.json({ success: true, message: 'Récompense convertie avec succès !', client: updated.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
