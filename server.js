@@ -5,8 +5,11 @@ const path = require('path');
 
 const app = express();
 app.use(express.json());
+
+// Serve static assets (images, CSS, JS) from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// PostgreSQL Database Connection Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -22,7 +25,40 @@ const isValidName = (name) => {
   return words.length >= 3;
 };
 
-// 1. Manager Login
+// -------------------------------------------------------------
+// PAGE ROUTES (Clean URLs without .html)
+// -------------------------------------------------------------
+
+// Main domain loads Client Portal directly
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'client.html'));
+});
+
+// Clean Client URL
+app.get('/client', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'client.html'));
+});
+
+// Clean Admin URL (Matches UptimeRobot: /admin)
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// -------------------------------------------------------------
+// API ROUTES
+// -------------------------------------------------------------
+
+// Health Check Endpoint (keeps both Node & Neon DB awake when pinged)
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', database: 'connected' });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// 1. Manager Authentication / Login
 app.post('/api/admin/login', (req, res) => {
   const { pin } = req.body;
   if (pin === MANAGER_PIN) {
@@ -32,7 +68,7 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
-// 2. Register Client
+// 2. Register New Client
 app.post('/api/clients/register', async (req, res) => {
   const { phone, name } = req.body;
 
@@ -60,7 +96,7 @@ app.post('/api/clients/register', async (req, res) => {
   }
 });
 
-// 3. Get Single Client
+// 3. Get Single Client Details
 app.get('/api/clients/:phone', async (req, res) => {
   const { phone } = req.params;
   try {
@@ -82,7 +118,7 @@ app.get('/api/clients', async (req, res) => {
   }
 });
 
-// 5. Add Points (CAP AT 100 PTS)
+// 5. Add Points (Capped at 100 Pts)
 app.post('/api/clients/add-points', async (req, res) => {
   const { phone, pointsToAdd } = req.body;
   if (!isValidPhone(phone)) return res.status(400).json({ error: 'Numéro invalide.' });
@@ -99,7 +135,7 @@ app.post('/api/clients/add-points', async (req, res) => {
   }
 });
 
-// 6. Remove Points
+// 6. Remove Points (Manager Only)
 app.post('/api/clients/remove-points', async (req, res) => {
   const { phone, pointsToRemove, pin } = req.body;
   if (pin !== MANAGER_PIN) return res.status(403).json({ error: 'Code PIN Manager incorrect.' });
@@ -117,7 +153,7 @@ app.post('/api/clients/remove-points', async (req, res) => {
   }
 });
 
-// 7. Redeem Points (100 Pts to 0)
+// 7. Redeem Points (100 Pts conversion)
 app.post('/api/clients/redeem', async (req, res) => {
   const { phone } = req.body;
 
