@@ -164,8 +164,9 @@
 
         const client = await res.json();
         
-        // Save phone locally for instant future access
+        // Save phone & name locally for future access and QR generation
         localStorage.setItem('otacos_phone', client.phone);
+        localStorage.setItem('otacos_name', client.name || 'Client O\'Tacos');
 
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('cardContent').style.display = 'block';
@@ -217,63 +218,75 @@
       });
     }
 
-    // FUNCTION TO DOWNLOAD / SAVE QR CODE IMAGE
-function downloadQRCode() {
-  const qrContainer = document.getElementById('qrcode');
-  const canvas = qrContainer.querySelector('canvas');
-  const img = qrContainer.querySelector('img');
+    // FUNCTION TO COMPOSE AND DOWNLOAD QR CODE WITH NAME, PHONE & BRAND INCLUDED
+    function downloadQRCode() {
+      const qrContainer = document.getElementById('qrcode');
+      const canvas = qrContainer.querySelector('canvas');
+      const img = qrContainer.querySelector('img');
 
-  // Get the base QR code source (Canvas or Img)
-  let qrImageSource = null;
-  if (canvas) {
-    qrImageSource = canvas;
-  } else if (img && img.src) {
-    qrImageSource = img;
-  }
+      let qrImageSource = null;
+      if (canvas) {
+        qrImageSource = canvas;
+      } else if (img && img.src) {
+        qrImageSource = img;
+      }
 
-  if (!qrImageSource) {
-    alert('Veuillez d\'abord afficher votre QR Code.');
-    return;
-  }
+      if (!qrImageSource) {
+        alert('Veuillez d\'abord afficher votre QR Code.');
+        return;
+      }
 
-  const phone = localStorage.getItem('otacos_phone') || 'carte';
+      const phone = localStorage.getItem('otacos_phone') || 'carte';
+      const name = localStorage.getItem('otacos_name') || 'Client O\'Tacos';
 
-  // 1. Create a temporary hidden canvas to compose the final image
-  const tempCanvas = document.createElement('canvas');
-  const ctx = tempCanvas.getContext('2d');
+      // 1. Create temporary hidden canvas
+      const tempCanvas = document.createElement('canvas');
+      const ctx = tempCanvas.getContext('2d');
 
-  // Set dimensions (300px wide, 320px tall to give space for text below)
-  tempCanvas.width = 300;
-  tempCanvas.height = 320;
+      // Expanded height (350px) for Name + Phone + Brand
+      tempCanvas.width = 300;
+      tempCanvas.height = 350;
 
-  // 2. Draw white background with rounded border
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+      // 2. White background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-  // 3. Draw the QR code centered on the top section
-  // (Assuming QR image size is 200x200)
-  ctx.drawImage(qrImageSource, 50, 25, 200, 200);
+      // 3. Draw QR Code centered at top
+      ctx.drawImage(qrImageSource, 50, 20, 200, 200);
 
-  // 4. Draw the Phone Number text beneath the QR Code
-  ctx.fillStyle = '#0d131d'; // Dark text color
-  ctx.font = 'bold 20px "Segoe UI", Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(`TEL: ${phone}`, tempCanvas.width / 2, 255);
+      // 4. Draw Full Client Name (bold dark text)
+      ctx.fillStyle = '#0d131d';
+      ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(name, tempCanvas.width / 2, 250);
 
-  // 5. Draw subtitle / brand text at the bottom
-  ctx.fillStyle = '#ff6600'; // Brand orange color
-  ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
-  ctx.fillText("O'TACOS LOYALTY CARD", tempCanvas.width / 2, 285);
+      // 5. Draw Phone Number (secondary text color)
+      ctx.fillStyle = '#2c384a';
+      ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
+      ctx.fillText(`TEL: ${phone}`, tempCanvas.width / 2, 280);
 
-  // 6. Convert composed canvas to PNG and trigger download
-  const combinedImage = tempCanvas.toDataURL('image/png');
-  const link = document.createElement('a');
-  link.href = combinedImage;
-  link.download = `OTacos_QR_${phone}.png`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+      // 6. Draw Brand Label at bottom (Orange)
+      ctx.fillStyle = '#ff6600';
+      ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
+      ctx.fillText("O'TACOS LOYALTY CARD", tempCanvas.width / 2, 315);
+
+      // 7. Generate PNG image and trigger download
+      const combinedImage = tempCanvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = combinedImage;
+      link.download = `OTacos_QR_${phone}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function resetCard() {
+      localStorage.removeItem('otacos_phone');
+      localStorage.removeItem('otacos_name');
+      document.getElementById('cardContent').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('phoneInput').value = '';
+    }
   </script>
 </body>
 </html>
