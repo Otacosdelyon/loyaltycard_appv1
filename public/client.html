@@ -218,39 +218,62 @@
     }
 
     // FUNCTION TO DOWNLOAD / SAVE QR CODE IMAGE
-    function downloadQRCode() {
-      const qrContainer = document.getElementById('qrcode');
-      let imageSrc = '';
+function downloadQRCode() {
+  const qrContainer = document.getElementById('qrcode');
+  const canvas = qrContainer.querySelector('canvas');
+  const img = qrContainer.querySelector('img');
 
-      const canvas = qrContainer.querySelector('canvas');
-      const img = qrContainer.querySelector('img');
+  // Get the base QR code source (Canvas or Img)
+  let qrImageSource = null;
+  if (canvas) {
+    qrImageSource = canvas;
+  } else if (img && img.src) {
+    qrImageSource = img;
+  }
 
-      if (canvas) {
-        imageSrc = canvas.toDataURL('image/png');
-      } else if (img && img.src) {
-        imageSrc = img.src;
-      }
+  if (!qrImageSource) {
+    alert('Veuillez d\'abord afficher votre QR Code.');
+    return;
+  }
 
-      if (!imageSrc) {
-        alert('Veuillez d\'abord afficher votre QR Code.');
-        return;
-      }
+  const phone = localStorage.getItem('otacos_phone') || 'carte';
 
-      const phone = localStorage.getItem('otacos_phone') || 'carte';
-      const link = document.createElement('a');
-      link.href = imageSrc;
-      link.download = `OTacos_QR_${phone}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+  // 1. Create a temporary hidden canvas to compose the final image
+  const tempCanvas = document.createElement('canvas');
+  const ctx = tempCanvas.getContext('2d');
 
-    function resetCard() {
-      localStorage.removeItem('otacos_phone');
-      document.getElementById('cardContent').style.display = 'none';
-      document.getElementById('loginForm').style.display = 'block';
-      document.getElementById('phoneInput').value = '';
-    }
+  // Set dimensions (300px wide, 320px tall to give space for text below)
+  tempCanvas.width = 300;
+  tempCanvas.height = 320;
+
+  // 2. Draw white background with rounded border
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+  // 3. Draw the QR code centered on the top section
+  // (Assuming QR image size is 200x200)
+  ctx.drawImage(qrImageSource, 50, 25, 200, 200);
+
+  // 4. Draw the Phone Number text beneath the QR Code
+  ctx.fillStyle = '#0d131d'; // Dark text color
+  ctx.font = 'bold 20px "Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`TEL: ${phone}`, tempCanvas.width / 2, 255);
+
+  // 5. Draw subtitle / brand text at the bottom
+  ctx.fillStyle = '#ff6600'; // Brand orange color
+  ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
+  ctx.fillText("O'TACOS LOYALTY CARD", tempCanvas.width / 2, 285);
+
+  // 6. Convert composed canvas to PNG and trigger download
+  const combinedImage = tempCanvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.href = combinedImage;
+  link.download = `OTacos_QR_${phone}.png`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
   </script>
 </body>
 </html>
