@@ -3,81 +3,134 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>O'TACOS - Ma Carte de Fidélité</title>
+  <title>O'TACOS LOYALTY</title>
   <link rel="shortcut icon" href="otacoslogo.png" type="image/png">
+  <!-- QRCode Generator Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #121212; color: #fff; margin: 0; padding: 20px; text-align: center; }
-    .header { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 20px; }
-    .header img { height: 50px; margin-right: 15px; }
-    .card { background: #1e1e1e; max-width: 450px; margin: 0 auto; border-radius: 16px; padding: 25px; border: 2px solid #e5a93c; }
-    .input-group { margin-bottom: 20px; }
-    input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; font-size: 18px; text-align: center; background: #2b2b2b; color: #fff; }
-    button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #e5a93c; color: #000; font-weight: bold; font-size: 16px; cursor: pointer; }
-    .stamps-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin: 25px 0; }
-    .stamp { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #e5a93c; position: relative; margin: 0 auto; background: #2a2a2a; overflow: hidden; }
-    .stamp-fill { position: absolute; bottom: 0; left: 0; right: 0; background: #e5a93c; transition: height 0.3s ease; }
-    .stamp-number { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; z-index: 2; text-shadow: 1px 1px 2px #000; }
-    .pts-summary { font-size: 20px; font-weight: bold; color: #e5a93c; }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { background-color: #0d131d; color: #fff; margin: 0; padding: 20px; }
+    .top-header { display: flex; align-items: center; margin-bottom: 20px; }
+    .top-header img { height: 45px; margin-right: 15px; }
+    
+    .card {
+      background: #192231;
+      max-width: 420px;
+      margin: 0 auto;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    .main-title { color: #ff6600; font-size: 24px; font-weight: 900; letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase; }
+    
+    .phone-pill { background: #2c384a; color: #8fa0b5; display: inline-block; padding: 5px 15px; border-radius: 12px; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+    .client-name { font-size: 22px; font-weight: bold; margin: 5px 0; color: #ffffff; }
+    .points-title { color: #ff6600; font-size: 18px; font-weight: bold; margin-bottom: 20px; }
+
+    .stamps-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 25px; }
+    .stamp {
+      width: 52px; height: 52px; border-radius: 50%; background: #4a3328; border: 2px solid #ff6600;
+      display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; color: #ff9955;
+      position: relative; overflow: hidden; margin: 0 auto;
+    }
+    .stamp-fill { position: absolute; bottom: 0; left: 0; right: 0; background: #ff6600; transition: height 0.3s ease; }
+    .stamp-num { position: absolute; z-index: 2; color: #fff; }
+
+    .qr-container { background: #fff; border-radius: 16px; padding: 15px; display: inline-block; margin-top: 10px; }
+    #qrcode img { display: block; margin: 0 auto; }
+    .qr-subtext { font-size: 13px; color: #8fa0b5; margin-top: 10px; }
+    
+    input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2c384a; background: #111722; color: #fff; font-size: 16px; text-align: center; margin-bottom: 10px; }
+    button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #ff6600; color: #fff; font-weight: bold; font-size: 16px; cursor: pointer; }
+    .btn-change { background: transparent; border: 1px solid #2c384a; color: #8fa0b5; margin-top: 15px; }
   </style>
 </head>
 <body>
 
-  <div class="header">
+  <div class="top-header">
     <img src="otacoslogo.png" alt="O'Tacos Logo">
-    <h2>Carte de Fidélité</h2>
   </div>
 
+  <div class="main-title" style="text-align: center;">O'TACOS LOYALTY</div>
+
   <div class="card">
-    <div class="input-group">
-      <input type="text" id="phoneInput" maxlength="8" placeholder="Entrez votre numéro (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-      <button onclick="loadClientCard()" style="margin-top: 10px;">Consulter mes points</button>
+    <div id="loginForm">
+      <h3>Consulter ma Carte</h3>
+      <input type="text" id="phoneInput" maxlength="8" placeholder="Numéro de téléphone (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+      <button onclick="loadCard()">Voir mon compte</button>
     </div>
 
-    <div id="cardContent" style="display:none;">
-      <div class="pts-summary" id="pointsDisplay">0 Pts</div>
+    <div id="cardContent" style="display: none;">
+      <div class="phone-pill" id="displayPhone">77111113</div>
+      <div class="client-name" id="displayName">Ahmed Youssouf Hadji</div>
+      <div class="points-title"><span id="displayPoints">0</span> Total Points</div>
+
       <div class="stamps-grid" id="stampsGrid"></div>
+
+      <div class="qr-container">
+        <div id="qrcode"></div>
+      </div>
+      <div class="qr-subtext">Scannez ce QR Code à la caisse</div>
+
+      <button class="btn-change" onclick="resetCard()">Changer de compte</button>
     </div>
   </div>
 
   <script>
-    async function loadClientCard() {
+    let qrcodeObj = null;
+
+    async function loadCard() {
       const phone = document.getElementById('phoneInput').value;
-      if (phone.length !== 8) {
-        alert('Veuillez entrer un numéro valide à 8 chiffres.');
-        return;
-      }
+      if (phone.length !== 8) return alert('Veuillez entrer un numéro à 8 chiffres.');
 
       const res = await fetch(`/api/clients/${phone}`);
-      if (!res.ok) {
-        alert('Client non trouvé.');
-        return;
-      }
+      if (!res.ok) return alert('Client non trouvé.');
 
-      const data = await res.json();
-      renderStamps(data.points);
+      const client = await res.json();
+      
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('cardContent').style.display = 'block';
+
+      document.getElementById('displayPhone').innerText = client.phone;
+      document.getElementById('displayName').innerText = client.name || 'Client O\'Tacos';
+      document.getElementById('displayPoints').innerText = client.points;
+
+      renderStamps(client.points);
+      generateQRCode(client.phone);
     }
 
     function renderStamps(points) {
-      document.getElementById('cardContent').style.display = 'block';
-      document.getElementById('pointsDisplay').innerText = `${points} Points`;
-
       const grid = document.getElementById('stampsGrid');
       grid.innerHTML = '';
 
       for (let i = 1; i <= 10; i++) {
-        // Points assigned to this stamp (10 points per stamp)
-        const stampPoints = Math.max(0, Math.min(10, points - (i - 1) * 10));
-        const fillPercentage = (stampPoints / 10) * 100;
+        const stampPts = Math.max(0, Math.min(10, points - (i - 1) * 10));
+        const fillHeight = (stampPts / 10) * 100;
 
-        const stampEl = document.createElement('div');
-        stampEl.className = 'stamp';
-        stampEl.innerHTML = `
-          <div class="stamp-fill" style="height: ${fillPercentage}%"></div>
-          <div class="stamp-number">${i}</div>
+        const stamp = document.createElement('div');
+        stamp.className = 'stamp';
+        stamp.innerHTML = `
+          <div class="stamp-fill" style="height: ${fillHeight}%;"></div>
+          <div class="stamp-num">${i}</div>
         `;
-        grid.appendChild(stampEl);
+        grid.appendChild(stamp);
       }
+    }
+
+    function generateQRCode(text) {
+      document.getElementById('qrcode').innerHTML = '';
+      qrcodeObj = new QRCode(document.getElementById('qrcode'), {
+        text: text,
+        width: 160,
+        height: 160
+      });
+    }
+
+    function resetCard() {
+      document.getElementById('cardContent').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('phoneInput').value = '';
     }
   </script>
 </body>

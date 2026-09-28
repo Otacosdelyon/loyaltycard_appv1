@@ -3,26 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>O'TACOS - Panneau d'Administration</title>
+  <title>O'TACOS - Espace Admin</title>
   <link rel="shortcut icon" href="otacoslogo.png" type="image/png">
+  <!-- HTML5 QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background-color: #121212; color: #fff; margin: 0; padding: 20px; }
-    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e5a93c; padding-bottom: 15px; margin-bottom: 20px; }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { background-color: #0d131d; color: #fff; margin: 0; padding: 20px; }
+    
+    .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #ff6600; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
     .header-left { display: flex; align-items: center; }
     .header-left img { height: 50px; margin-right: 15px; }
-    .role-select { background: #222; color: #e5a93c; border: 1px solid #e5a93c; padding: 8px; border-radius: 6px; font-weight: bold; }
-    .block { background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
-    .block h3 { color: #e5a93c; margin-top: 0; }
-    input, select { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #2b2b2b; color: #fff; margin-bottom: 10px; width: 100%; }
-    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-    button { padding: 10px 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    
+    .role-select { background: #192231; color: #ff6600; border: 1px solid #ff6600; padding: 8px 12px; border-radius: 8px; font-weight: bold; }
+
+    .block { background: #192231; border: 1px solid #2c384a; border-radius: 16px; padding: 20px; margin-bottom: 25px; }
+    .block h3 { color: #ff6600; margin-top: 0; border-bottom: 1px solid #2c384a; padding-bottom: 10px; }
+
+    input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2c384a; background: #111722; color: #fff; margin-bottom: 12px; font-size: 15px; }
+    
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    button { padding: 12px 18px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; }
+    .btn-main { background: #ff6600; color: #fff; }
     .btn-add { background: #28a745; color: #fff; }
     .btn-remove { background: #dc3545; color: #fff; }
-    .btn-convert { background: #e5a93c; color: #000; width: 100%; font-size: 16px; margin-top: 10px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #333; padding: 10px; text-align: left; }
-    th { background: #2a2a2a; color: #e5a93c; }
+    .btn-convert { background: #ff6600; color: #fff; width: 100%; font-size: 16px; margin-top: 15px; }
+    .btn-login { background: #ff6600; color: #fff; padding: 8px 14px; }
+    .btn-logout { background: #6c757d; color: #fff; padding: 8px 14px; }
+
+    #reader { width: 100%; max-width: 320px; margin: 10px auto; border-radius: 12px; overflow: hidden; display: none; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #2c384a; padding: 12px; text-align: left; }
+    th { background: #111722; color: #ff6600; }
   </style>
 </head>
 <body>
@@ -30,40 +44,58 @@
   <div class="header">
     <div class="header-left">
       <img src="otacoslogo.png" alt="O'Tacos Logo">
-      <h2>Espace Admin</h2>
+      <h2 style="margin:0;">Panneau Admin</h2>
     </div>
-    <div>
-      <label>Rôle actuel : </label>
-      <select id="roleSelect" class="role-select">
-        <option value="supervisor">Supervisor</option>
-        <option value="manager">Manager</option>
-      </select>
+    
+    <div class="header-right">
+      <div>
+        <label>Rôle : </label>
+        <select id="roleSelect" class="role-select" onchange="handleRoleChange()">
+          <option value="supervisor">Supervisor</option>
+          <option value="manager">Manager</option>
+        </select>
+      </div>
+      
+      <!-- Manager Auth Status -->
+      <div id="managerAuthBlock" style="display: none;">
+        <span id="managerStatus" style="color: #28a745; font-weight: bold; margin-right: 5px;">🔒 Manager Connecté</span>
+        <button class="btn-logout" onclick="logoutManager()">Déconnexion</button>
+      </div>
     </div>
   </div>
 
-  <!-- Block 1 -->
+  <!-- BLOCK 1 -->
   <div class="block">
     <h3>1. Enregistrer un Nouveau Client (1ère Visite!)</h3>
-    <input type="text" id="newPhone" maxlength="8" placeholder="Numéro de téléphone (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-    <button class="btn-add" onclick="registerClient()">Enregistrer le Client</button>
+    <input type="text" id="newName" placeholder="Nom Complet (ex: Ahmed Ali Umar - min 3 mots)">
+    <input type="text" id="newPhone" maxlength="8" placeholder="Numéro Téléphone (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+    <button class="btn-main" onclick="registerClient()">Enregistrer le Client</button>
   </div>
 
-  <!-- Block 2 -->
+  <!-- BLOCK 2 -->
   <div class="block">
     <h3>2. Scanner QR Code & Gérer les Points</h3>
-    <input type="text" id="managePhone" maxlength="8" placeholder="Rechercher par Numéro (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-    <button onclick="searchClient()" style="background:#007bff; color:#fff;">Charger Client</button>
     
-    <div id="clientDetails" style="display:none; margin-top: 15px;">
-      <p><strong>Points Actuels : </strong><span id="currentPts" style="color:#e5a93c; font-size: 20px;">0</span> Pts</p>
+    <div style="display:flex; gap: 10px;">
+      <input type="text" id="searchPhone" maxlength="8" placeholder="Numéro Téléphone (8 chiffres)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+      <button class="btn-main" onclick="searchClient()">Chercher</button>
+    </div>
+    
+    <button onclick="toggleScanner()" style="background:#007bff; color:#fff; width:100%; margin-bottom:10px;">📷 Ouvrir Scanner Camera</button>
+    <div id="reader"></div>
+
+    <div id="clientDetails" style="display:none; margin-top: 20px; background: #111722; padding: 15px; border-radius: 12px;">
+      <h4 style="margin-top:0; color:#fff;" id="clientTitle">Client: </h4>
+      <p>Points Actuels : <strong id="currentPts" style="color:#ff6600; font-size: 22px;">0</strong> Pts</p>
       
-      <h4>Ajouter / Retirer des Points :</h4>
+      <p style="margin-bottom:5px; font-weight:bold;">Ajouter Points :</p>
       <div class="btn-group">
         <button class="btn-add" onclick="addPts(10)">Tacos (+10 Pts)</button>
         <button class="btn-add" onclick="addPts(5)">Burger/Panini (+5 Pts)</button>
         <button class="btn-add" onclick="addPts(10)">Breakfast (+10 Pts)</button>
       </div>
 
+      <p style="margin-bottom:5px; font-weight:bold;">Retirer Points (Manager Uniquement) :</p>
       <div class="btn-group">
         <button class="btn-remove" onclick="removePts(10)">Retirer (-10 Pts)</button>
         <button class="btn-remove" onclick="removePts(5)">Retirer (-5 Pts)</button>
@@ -73,13 +105,14 @@
     </div>
   </div>
 
-  <!-- Block 3 -->
+  <!-- BLOCK 3 -->
   <div class="block">
     <h3>3. Liste des Clients</h3>
     <button onclick="loadClientsList()" style="background:#6c757d; color:#fff;">Rafraîchir la Liste</button>
     <table>
       <thead>
         <tr>
+          <th>Nom Complet</th>
           <th>Téléphone</th>
           <th>Points</th>
           <th>Date de Création</th>
@@ -91,41 +124,94 @@
 
   <script>
     let activeClient = null;
+    let html5QrCode = null;
 
     function getRole() {
       return document.getElementById('roleSelect').value;
     }
 
+    async function handleRoleChange() {
+      const role = getRole();
+      if (role === 'manager') {
+        const loggedInPin = sessionStorage.getItem('managerPin');
+        if (!loggedInPin) {
+          await promptManagerLogin();
+        } else {
+          document.getElementById('managerAuthBlock').style.display = 'block';
+        }
+      } else {
+        document.getElementById('managerAuthBlock').style.display = 'none';
+      }
+    }
+
+    async function promptManagerLogin() {
+      const pin = prompt('Connexion Manager : Veuillez entrer votre code PIN (4 chiffres)');
+      if (!pin) {
+        document.getElementById('roleSelect').value = 'supervisor';
+        return false;
+      }
+
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        sessionStorage.setItem('managerPin', pin);
+        document.getElementById('managerAuthBlock').style.display = 'block';
+        alert('Connexion réussie en tant que Manager !');
+        return true;
+      } else {
+        alert(data.error);
+        document.getElementById('roleSelect').value = 'supervisor';
+        return false;
+      }
+    }
+
+    function logoutManager() {
+      sessionStorage.removeItem('managerPin');
+      document.getElementById('roleSelect').value = 'supervisor';
+      document.getElementById('managerAuthBlock').style.display = 'none';
+      alert('Déconnecté du rôle Manager.');
+    }
+
     async function registerClient() {
+      const name = document.getElementById('newName').value;
       const phone = document.getElementById('newPhone').value;
-      if (phone.length !== 8) return alert('Le numéro doit comporter exactement 8 chiffres.');
 
       const res = await fetch('/api/clients/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone })
+        body: JSON.stringify({ name, phone })
       });
+
       const data = await res.json();
       if (!res.ok) return alert(data.error);
 
       alert('Client enregistré avec succès!');
+      document.getElementById('newName').value = '';
       document.getElementById('newPhone').value = '';
       loadClientsList();
     }
 
-    async function searchClient() {
-      const phone = document.getElementById('managePhone').value;
-      if (phone.length !== 8) return alert('Entrez un numéro à 8 chiffres.');
-
+    async function searchClientByPhone(phone) {
       const res = await fetch(`/api/clients/${phone}`);
       if (!res.ok) {
         alert('Client introuvable.');
         return;
       }
-
       activeClient = await res.json();
       document.getElementById('clientDetails').style.display = 'block';
+      document.getElementById('clientTitle').innerText = `Client: ${activeClient.name} (${activeClient.phone})`;
       document.getElementById('currentPts').innerText = activeClient.points;
+    }
+
+    function searchClient() {
+      const phone = document.getElementById('searchPhone').value;
+      if (phone.length !== 8) return alert('Entrez un numéro à 8 chiffres.');
+      searchClientByPhone(phone);
     }
 
     async function addPts(pts) {
@@ -147,8 +233,13 @@
       if (getRole() !== 'manager') {
         return alert('Seul le Manager est autorisé à retirer des points.');
       }
-      const pin = prompt('Entrez le code PIN Manager (4 chiffres) :');
-      if (!pin) return;
+      
+      let pin = sessionStorage.getItem('managerPin');
+      if (!pin) {
+        const success = await promptManagerLogin();
+        if (!success) return;
+        pin = sessionStorage.getItem('managerPin');
+      }
 
       const res = await fetch('/api/clients/remove-points', {
         method: 'POST',
@@ -164,22 +255,12 @@
     }
 
     async function redeemPoints() {
-      if (getRole() !== 'manager') {
-        return alert('Seul le Manager est autorisé à effectuer les conversions.');
-      }
-
-      if (activeClient.points < 100) {
-        const missing = 100 - activeClient.points;
-        return alert(`Désolé, vous avez ${missing} points manquants.`);
-      }
-
-      const pin = prompt('Entrez le code PIN Manager (4 chiffres) :');
-      if (!pin) return;
+      if (!activeClient) return;
 
       const res = await fetch('/api/clients/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: activeClient.phone, pin })
+        body: JSON.stringify({ phone: activeClient.phone })
       });
       const data = await res.json();
       if (!res.ok) return alert(data.error);
@@ -190,6 +271,27 @@
       loadClientsList();
     }
 
+    function toggleScanner() {
+      const readerEl = document.getElementById('reader');
+      if (readerEl.style.display === 'none') {
+        readerEl.style.display = 'block';
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          (decodedText) => {
+            html5QrCode.stop();
+            readerEl.style.display = 'none';
+            document.getElementById('searchPhone').value = decodedText;
+            searchClientByPhone(decodedText);
+          }
+        );
+      } else {
+        if (html5QrCode) html5QrCode.stop();
+        readerEl.style.display = 'none';
+      }
+    }
+
     async function loadClientsList() {
       const res = await fetch('/api/clients');
       const clients = await res.json();
@@ -198,6 +300,7 @@
       clients.forEach(c => {
         tbody.innerHTML += `
           <tr>
+            <td>${c.name || '-'}</td>
             <td>${c.phone}</td>
             <td>${c.points}</td>
             <td>${new Date(c.created_at).toLocaleString()}</td>
